@@ -39,12 +39,30 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 			return document;
 		}
 
-		InvocationExpressionSyntax createMockCall = SyntaxFactory.InvocationExpression(
+		InvocationExpressionSyntax createMockInvocation = SyntaxFactory.InvocationExpression(
+			SyntaxFactory.MemberAccessExpression(
+				SyntaxKind.SimpleMemberAccessExpression,
+				typeArgument.WithoutTrivia(),
+				SyntaxFactory.IdentifierName("CreateMock")));
+
+		if (HasStrictMockBehavior(expressionSyntax, semanticModel, cancellationToken))
+		{
+			ExpressionSyntax throwingWhenNotSetup = SyntaxFactory.InvocationExpression(
 				SyntaxFactory.MemberAccessExpression(
 					SyntaxKind.SimpleMemberAccessExpression,
-					typeArgument.WithoutTrivia(),
-					SyntaxFactory.IdentifierName("CreateMock")))
-			.WithTriviaFrom(expressionSyntax);
+					SyntaxFactory.MemberAccessExpression(
+						SyntaxKind.SimpleMemberAccessExpression,
+						SyntaxFactory.IdentifierName("MockBehavior"),
+						SyntaxFactory.IdentifierName("Default")),
+					SyntaxFactory.IdentifierName("ThrowingWhenNotSetup")));
+
+			createMockInvocation = createMockInvocation.WithArgumentList(
+				SyntaxFactory.ArgumentList(
+					SyntaxFactory.SingletonSeparatedList(
+						SyntaxFactory.Argument(throwingWhenNotSetup))));
+		}
+
+		InvocationExpressionSyntax createMockCall = createMockInvocation.WithTriviaFrom(expressionSyntax);
 
 		TypeSyntax? declarationType = GetDeclarationTypeSyntax(expressionSyntax);
 		bool replaceDeclarationType = declarationType is not null && declarationType is not IdentifierNameSyntax { IsVar: true, };
@@ -53,6 +71,12 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		List<MemberAccessExpressionSyntax> objectAccesses = FindObjectAccesses(compilationUnit, semanticModel, mockSymbol, cancellationToken);
 		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> setupCallReplacements =
 			FindAndBuildSetupCallReplacements(compilationUnit, semanticModel, mockSymbol, cancellationToken);
+
+		Dictionary<InvocationExpressionSyntax, MemberAccessExpressionSyntax> setupPropertyAccessReplacements =
+			FindAndBuildSetupPropertyAccessReplacements(compilationUnit, semanticModel, mockSymbol, cancellationToken);
+
+		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> setupPropertyCallReplacements =
+			FindAndBuildSetupPropertyCallReplacements(compilationUnit, semanticModel, mockSymbol, cancellationToken);
 
 		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> callbackReplacements =
 			FindAndBuildCallbackReplacements(compilationUnit, setupCallReplacements, out HashSet<InvocationExpressionSyntax> setupsWrappedByCallbacks);
@@ -71,6 +95,8 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 
 		nodesToReplace.AddRange(objectAccesses);
 		nodesToReplace.AddRange(setupCallReplacements.Keys.Where(k => !setupsWrappedByCallbacks.Contains(k)));
+		nodesToReplace.AddRange(setupPropertyAccessReplacements.Keys);
+		nodesToReplace.AddRange(setupPropertyCallReplacements.Keys);
 		nodesToReplace.AddRange(callbackReplacements.Keys);
 		nodesToReplace.AddRange(verifyCallReplacements.Keys);
 		nodesToReplace.AddRange(raiseCallReplacements.Keys);
@@ -99,6 +125,16 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 					if (setupCallReplacements.TryGetValue(invocation, out InvocationExpressionSyntax? setupReplacement))
 					{
 						return setupReplacement;
+					}
+
+					if (setupPropertyAccessReplacements.TryGetValue(invocation, out MemberAccessExpressionSyntax? propertyAccessReplacement))
+					{
+						return propertyAccessReplacement;
+					}
+
+					if (setupPropertyCallReplacements.TryGetValue(invocation, out InvocationExpressionSyntax? setupPropertyCallReplacement))
+					{
+						return setupPropertyCallReplacement;
 					}
 
 					if (verifyCallReplacements.TryGetValue(invocation, out InvocationExpressionSyntax? verifyReplacement))
@@ -147,10 +183,48 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 					Initializer: null,
 				}
 				=> args[0],
+			ObjectCreationExpressionSyntax
+				{
+					Type: GenericNameSyntax { TypeArgumentList.Arguments: { Count: 1, } args, },
+					ArgumentList: { Arguments: { Count: 1, } arguments, },
+					Initializer: null,
+				} when IsMockBehaviorArgument(arguments[0], semanticModel, cancellationToken)
+				=> args[0],
 			ImplicitObjectCreationExpressionSyntax { ArgumentList.Arguments.Count: 0, Initializer: null, }
 				=> GetTypeArgumentFromSemanticModel(semanticModel, expressionSyntax, cancellationToken),
 			_ => null,
 		};
+
+	private static bool IsMockBehaviorArgument(ArgumentSyntax argument, SemanticModel? semanticModel, CancellationToken cancellationToken)
+	{
+		if (semanticModel is not null)
+		{
+			ISymbol? symbol = semanticModel.GetSymbolInfo(argument.Expression, cancellationToken).Symbol;
+			return symbol?.ContainingType?.ToDisplayString() == "Moq.MockBehavior";
+		}
+
+		string text = argument.Expression.ToString();
+		return text is "MockBehavior.Strict" or "Moq.MockBehavior.Strict"
+			or "MockBehavior.Loose" or "Moq.MockBehavior.Loose"
+			or "MockBehavior.Default" or "Moq.MockBehavior.Default";
+	}
+
+	private static bool HasStrictMockBehavior(ExpressionSyntax expressionSyntax, SemanticModel? semanticModel, CancellationToken cancellationToken)
+	{
+		if (expressionSyntax is not ObjectCreationExpressionSyntax { ArgumentList.Arguments: { Count: 1, } arguments, })
+		{
+			return false;
+		}
+
+		if (semanticModel is not null)
+		{
+			ISymbol? symbol = semanticModel.GetSymbolInfo(arguments[0].Expression, cancellationToken).Symbol;
+			return symbol?.ToDisplayString() == "Moq.MockBehavior.Strict";
+		}
+
+		string text = arguments[0].Expression.ToString();
+		return text is "MockBehavior.Strict" or "Moq.MockBehavior.Strict";
+	}
 
 	private static TypeSyntax? GetDeclarationTypeSyntax(ExpressionSyntax expressionSyntax) =>
 		expressionSyntax.Parent switch
@@ -433,6 +507,252 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 					mockAccess,
 					methodNameSyntax);
 				replacement = SyntaxFactory.InvocationExpression(methodAccess, transformedArgs)
+					.WithTriviaFrom(invocation);
+			}
+
+			result[invocation] = replacement;
+		}
+
+		return result;
+	}
+
+	private static Dictionary<InvocationExpressionSyntax, MemberAccessExpressionSyntax> FindAndBuildSetupPropertyAccessReplacements(
+		CompilationUnitSyntax compilationUnit,
+		SemanticModel? semanticModel,
+		ISymbol? mockSymbol,
+		CancellationToken cancellationToken)
+	{
+		if (semanticModel is null || mockSymbol is null)
+		{
+			return [];
+		}
+
+		Dictionary<InvocationExpressionSyntax, MemberAccessExpressionSyntax> result = [];
+		foreach (InvocationExpressionSyntax invocation in compilationUnit.DescendantNodes().OfType<InvocationExpressionSyntax>())
+		{
+			if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
+			{
+				continue;
+			}
+
+			if (memberAccess.Name.Identifier.Text != "Setup")
+			{
+				continue;
+			}
+
+			SymbolInfo symbolInfo = semanticModel.GetSymbolInfo(memberAccess.Expression, cancellationToken);
+			if (!SymbolEqualityComparer.Default.Equals(symbolInfo.Symbol, mockSymbol))
+			{
+				continue;
+			}
+
+			if (invocation.ArgumentList.Arguments.Count != 1 ||
+			    invocation.ArgumentList.Arguments[0].Expression is not LambdaExpressionSyntax lambda)
+			{
+				continue;
+			}
+
+			// Only handle property access (not method calls — those are handled by FindAndBuildSetupCallReplacements)
+			if (lambda.Body is not MemberAccessExpressionSyntax lambdaMemberAccess)
+			{
+				continue;
+			}
+
+			string? lambdaParamName = lambda switch
+			{
+				SimpleLambdaExpressionSyntax simple => simple.Parameter.Identifier.Text,
+				ParenthesizedLambdaExpressionSyntax { ParameterList.Parameters: { Count: 1, } parms, }
+					=> parms[0].Identifier.Text,
+				_ => null,
+			};
+
+			if (lambdaParamName is null)
+			{
+				continue;
+			}
+
+			List<SimpleNameSyntax>? navigationChain = ExtractNavigationChain(lambdaMemberAccess.Expression, lambdaParamName);
+			if (navigationChain is null)
+			{
+				continue;
+			}
+
+			SimpleNameSyntax propertyNameSyntax = lambdaMemberAccess.Name;
+
+			MemberAccessExpressionSyntax replacement;
+			if (navigationChain.Count == 0)
+			{
+				// Direct setup: mock.Mock.Setup.Property
+				MemberAccessExpressionSyntax mockAccess = SyntaxFactory.MemberAccessExpression(
+					SyntaxKind.SimpleMemberAccessExpression,
+					memberAccess.Expression,
+					SyntaxFactory.IdentifierName("Mock"));
+				MemberAccessExpressionSyntax setupAccess = SyntaxFactory.MemberAccessExpression(
+					SyntaxKind.SimpleMemberAccessExpression,
+					mockAccess,
+					SyntaxFactory.IdentifierName("Setup"));
+				replacement = SyntaxFactory.MemberAccessExpression(
+					SyntaxKind.SimpleMemberAccessExpression,
+					setupAccess,
+					propertyNameSyntax);
+			}
+			else
+			{
+				// Nested setup: mock.Nav1.Nav2.Mock.Setup.Property
+				ExpressionSyntax navChain = memberAccess.Expression;
+				foreach (SimpleNameSyntax nav in navigationChain)
+				{
+					navChain = SyntaxFactory.MemberAccessExpression(
+						SyntaxKind.SimpleMemberAccessExpression,
+						navChain,
+						nav);
+				}
+
+				MemberAccessExpressionSyntax mockAccess = SyntaxFactory.MemberAccessExpression(
+					SyntaxKind.SimpleMemberAccessExpression,
+					navChain,
+					SyntaxFactory.IdentifierName("Mock"));
+				MemberAccessExpressionSyntax setupAccess = SyntaxFactory.MemberAccessExpression(
+					SyntaxKind.SimpleMemberAccessExpression,
+					mockAccess,
+					SyntaxFactory.IdentifierName("Setup"));
+				replacement = SyntaxFactory.MemberAccessExpression(
+					SyntaxKind.SimpleMemberAccessExpression,
+					setupAccess,
+					propertyNameSyntax);
+			}
+
+			result[invocation] = replacement.WithTriviaFrom(invocation);
+		}
+
+		return result;
+	}
+
+	private static Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> FindAndBuildSetupPropertyCallReplacements(
+		CompilationUnitSyntax compilationUnit,
+		SemanticModel? semanticModel,
+		ISymbol? mockSymbol,
+		CancellationToken cancellationToken)
+	{
+		if (semanticModel is null || mockSymbol is null)
+		{
+			return [];
+		}
+
+		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> result = [];
+		foreach (InvocationExpressionSyntax invocation in compilationUnit.DescendantNodes().OfType<InvocationExpressionSyntax>())
+		{
+			if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
+			{
+				continue;
+			}
+
+			if (memberAccess.Name.Identifier.Text != "SetupProperty")
+			{
+				continue;
+			}
+
+			SymbolInfo symbolInfo = semanticModel.GetSymbolInfo(memberAccess.Expression, cancellationToken);
+			if (!SymbolEqualityComparer.Default.Equals(symbolInfo.Symbol, mockSymbol))
+			{
+				continue;
+			}
+
+			if (invocation.ArgumentList.Arguments.Count is 0 or > 2 ||
+			    invocation.ArgumentList.Arguments[0].Expression is not LambdaExpressionSyntax lambda)
+			{
+				continue;
+			}
+
+			if (lambda.Body is not MemberAccessExpressionSyntax lambdaMemberAccess)
+			{
+				continue;
+			}
+
+			string? lambdaParamName = lambda switch
+			{
+				SimpleLambdaExpressionSyntax simple => simple.Parameter.Identifier.Text,
+				ParenthesizedLambdaExpressionSyntax { ParameterList.Parameters: { Count: 1, } parms, }
+					=> parms[0].Identifier.Text,
+				_ => null,
+			};
+
+			if (lambdaParamName is null)
+			{
+				continue;
+			}
+
+			List<SimpleNameSyntax>? navigationChain = ExtractNavigationChain(lambdaMemberAccess.Expression, lambdaParamName);
+			if (navigationChain is null)
+			{
+				continue;
+			}
+
+			SimpleNameSyntax propertyNameSyntax = lambdaMemberAccess.Name;
+
+			ExpressionSyntax propertyAccess;
+			if (navigationChain.Count == 0)
+			{
+				MemberAccessExpressionSyntax mockAccess = SyntaxFactory.MemberAccessExpression(
+					SyntaxKind.SimpleMemberAccessExpression,
+					memberAccess.Expression,
+					SyntaxFactory.IdentifierName("Mock"));
+				MemberAccessExpressionSyntax setupAccess = SyntaxFactory.MemberAccessExpression(
+					SyntaxKind.SimpleMemberAccessExpression,
+					mockAccess,
+					SyntaxFactory.IdentifierName("Setup"));
+				propertyAccess = SyntaxFactory.MemberAccessExpression(
+					SyntaxKind.SimpleMemberAccessExpression,
+					setupAccess,
+					propertyNameSyntax);
+			}
+			else
+			{
+				ExpressionSyntax navChain = memberAccess.Expression;
+				foreach (SimpleNameSyntax nav in navigationChain)
+				{
+					navChain = SyntaxFactory.MemberAccessExpression(
+						SyntaxKind.SimpleMemberAccessExpression,
+						navChain,
+						nav);
+				}
+
+				MemberAccessExpressionSyntax mockAccess = SyntaxFactory.MemberAccessExpression(
+					SyntaxKind.SimpleMemberAccessExpression,
+					navChain,
+					SyntaxFactory.IdentifierName("Mock"));
+				MemberAccessExpressionSyntax setupAccess = SyntaxFactory.MemberAccessExpression(
+					SyntaxKind.SimpleMemberAccessExpression,
+					mockAccess,
+					SyntaxFactory.IdentifierName("Setup"));
+				propertyAccess = SyntaxFactory.MemberAccessExpression(
+					SyntaxKind.SimpleMemberAccessExpression,
+					setupAccess,
+					propertyNameSyntax);
+			}
+
+			InvocationExpressionSyntax replacement;
+			if (invocation.ArgumentList.Arguments.Count == 2)
+			{
+				// mock.SetupProperty(f => f.Name, "foo") → mock.Mock.Setup.Name.InitializeWith("foo")
+				ArgumentSyntax defaultValueArg = invocation.ArgumentList.Arguments[1];
+				replacement = SyntaxFactory.InvocationExpression(
+						SyntaxFactory.MemberAccessExpression(
+							SyntaxKind.SimpleMemberAccessExpression,
+							propertyAccess,
+							SyntaxFactory.IdentifierName("InitializeWith")),
+						SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList([defaultValueArg,])))
+					.WithTriviaFrom(invocation);
+			}
+			else
+			{
+				// mock.SetupProperty(f => f.Name) → mock.Mock.Setup.Name.Register()
+				replacement = SyntaxFactory.InvocationExpression(
+						SyntaxFactory.MemberAccessExpression(
+							SyntaxKind.SimpleMemberAccessExpression,
+							propertyAccess,
+							SyntaxFactory.IdentifierName("Register")),
+						SyntaxFactory.ArgumentList())
 					.WithTriviaFrom(invocation);
 			}
 
