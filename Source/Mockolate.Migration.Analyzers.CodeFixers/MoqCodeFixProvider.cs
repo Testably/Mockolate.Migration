@@ -54,7 +54,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		TypeSyntax? declarationType = GetDeclarationTypeSyntax(expressionSyntax);
 		if (declarationType is not null && declarationType is not IdentifierNameSyntax { IsVar: true })
 		{
-			compilationUnit = (CompilationUnitSyntax)compilationUnit.ReplaceNodes(
+			compilationUnit = compilationUnit.ReplaceNodes(
 				[expressionSyntax, declarationType],
 				(original, _) => original == expressionSyntax
 					? createMockCall
@@ -62,7 +62,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		}
 		else
 		{
-			compilationUnit = (CompilationUnitSyntax)compilationUnit.ReplaceNode(expressionSyntax, createMockCall);
+			compilationUnit = compilationUnit.ReplaceNode(expressionSyntax, createMockCall);
 		}
 
 		bool hasUsing = compilationUnit.Usings.Any(u => u.Name?.ToString() == "Mockolate");
