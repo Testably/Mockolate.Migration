@@ -59,7 +59,6 @@ public class MoqMigrationExamples
 		// matching regex
 		mock.Mock.Setup.DoSomethingStringy(It.Matches("[a-d]+").AsRegex(RegexOptions.IgnoreCase)).Returns("foo");
 
-
 		/* ------ Properties ------ */
 		mock.Mock.Setup.Name.Returns("bar");
 
@@ -129,7 +128,6 @@ public class MoqMigrationExamples
 
 		// matching regex
 		mock.Setup(x => x.DoSomethingStringy(Moq.It.IsRegex("[a-d]+", RegexOptions.IgnoreCase))).Returns("foo");
-
 
 		/* ------ Properties ------ */
 		mock.Setup(foo => foo.Name).Returns("bar");

@@ -68,24 +68,27 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		bool replaceDeclarationType = declarationType is not null && declarationType is not IdentifierNameSyntax { IsVar: true, };
 
 		ISymbol? mockSymbol = GetDeclaredMockSymbol(semanticModel, expressionSyntax, cancellationToken);
+		IReadOnlyList<InvocationExpressionSyntax> allInvocations =
+			compilationUnit.DescendantNodes().OfType<InvocationExpressionSyntax>().ToList();
+
 		List<MemberAccessExpressionSyntax> objectAccesses = FindObjectAccesses(compilationUnit, semanticModel, mockSymbol, cancellationToken);
 		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> setupCallReplacements =
-			FindAndBuildSetupCallReplacements(compilationUnit, semanticModel, mockSymbol, cancellationToken);
+			FindAndBuildSetupCallReplacements(allInvocations, semanticModel, mockSymbol, cancellationToken);
 
 		Dictionary<InvocationExpressionSyntax, MemberAccessExpressionSyntax> setupPropertyAccessReplacements =
-			FindAndBuildSetupPropertyAccessReplacements(compilationUnit, semanticModel, mockSymbol, cancellationToken);
+			FindAndBuildSetupPropertyAccessReplacements(allInvocations, semanticModel, mockSymbol, cancellationToken);
 
 		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> setupPropertyCallReplacements =
-			FindAndBuildSetupPropertyCallReplacements(compilationUnit, semanticModel, mockSymbol, cancellationToken);
+			FindAndBuildSetupPropertyCallReplacements(allInvocations, semanticModel, mockSymbol, cancellationToken);
 
 		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> callbackReplacements =
-			FindAndBuildCallbackReplacements(compilationUnit, setupCallReplacements, out HashSet<InvocationExpressionSyntax> setupsWrappedByCallbacks);
+			FindAndBuildCallbackReplacements(allInvocations, setupCallReplacements, out HashSet<InvocationExpressionSyntax> setupsWrappedByCallbacks);
 
 		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> verifyCallReplacements =
-			FindAndBuildVerifyCallReplacements(compilationUnit, semanticModel, mockSymbol, cancellationToken);
+			FindAndBuildVerifyCallReplacements(allInvocations, semanticModel, mockSymbol, cancellationToken);
 
 		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> raiseCallReplacements =
-			FindAndBuildRaiseCallReplacements(compilationUnit, semanticModel, mockSymbol, cancellationToken);
+			FindAndBuildRaiseCallReplacements(allInvocations, semanticModel, mockSymbol, cancellationToken);
 
 		List<SyntaxNode> nodesToReplace = [expressionSyntax,];
 		if (replaceDeclarationType)
@@ -252,7 +255,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 	}
 
 	private static Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> FindAndBuildRaiseCallReplacements(
-		CompilationUnitSyntax compilationUnit,
+		IReadOnlyList<InvocationExpressionSyntax> allInvocations,
 		SemanticModel? semanticModel,
 		ISymbol? mockSymbol,
 		CancellationToken cancellationToken)
@@ -263,7 +266,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		}
 
 		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> result = [];
-		foreach (InvocationExpressionSyntax invocation in compilationUnit.DescendantNodes().OfType<InvocationExpressionSyntax>())
+		foreach (InvocationExpressionSyntax invocation in allInvocations)
 		{
 			if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
 			{
@@ -294,13 +297,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 				continue;
 			}
 
-			string? lambdaParamName = lambda switch
-			{
-				SimpleLambdaExpressionSyntax simple => simple.Parameter.Identifier.Text,
-				ParenthesizedLambdaExpressionSyntax { ParameterList.Parameters: { Count: 1, } parms, }
-					=> parms[0].Identifier.Text,
-				_ => null,
-			};
+			string? lambdaParamName = GetSingleLambdaParamName(lambda);
 
 			if (lambdaParamName is null)
 			{
@@ -400,7 +397,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 	}
 
 	private static Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> FindAndBuildSetupCallReplacements(
-		CompilationUnitSyntax compilationUnit,
+		IReadOnlyList<InvocationExpressionSyntax> allInvocations,
 		SemanticModel? semanticModel,
 		ISymbol? mockSymbol,
 		CancellationToken cancellationToken)
@@ -411,7 +408,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		}
 
 		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> result = [];
-		foreach (InvocationExpressionSyntax invocation in compilationUnit.DescendantNodes().OfType<InvocationExpressionSyntax>())
+		foreach (InvocationExpressionSyntax invocation in allInvocations)
 		{
 			if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
 			{
@@ -441,13 +438,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 				continue;
 			}
 
-			string? lambdaParamName = lambda switch
-			{
-				SimpleLambdaExpressionSyntax simple => simple.Parameter.Identifier.Text,
-				ParenthesizedLambdaExpressionSyntax { ParameterList.Parameters: { Count: 1, } parms, }
-					=> parms[0].Identifier.Text,
-				_ => null,
-			};
+			string? lambdaParamName = GetSingleLambdaParamName(lambda);
 
 			if (lambdaParamName is null)
 			{
@@ -517,7 +508,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 	}
 
 	private static Dictionary<InvocationExpressionSyntax, MemberAccessExpressionSyntax> FindAndBuildSetupPropertyAccessReplacements(
-		CompilationUnitSyntax compilationUnit,
+		IReadOnlyList<InvocationExpressionSyntax> allInvocations,
 		SemanticModel? semanticModel,
 		ISymbol? mockSymbol,
 		CancellationToken cancellationToken)
@@ -528,7 +519,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		}
 
 		Dictionary<InvocationExpressionSyntax, MemberAccessExpressionSyntax> result = [];
-		foreach (InvocationExpressionSyntax invocation in compilationUnit.DescendantNodes().OfType<InvocationExpressionSyntax>())
+		foreach (InvocationExpressionSyntax invocation in allInvocations)
 		{
 			if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
 			{
@@ -558,13 +549,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 				continue;
 			}
 
-			string? lambdaParamName = lambda switch
-			{
-				SimpleLambdaExpressionSyntax simple => simple.Parameter.Identifier.Text,
-				ParenthesizedLambdaExpressionSyntax { ParameterList.Parameters: { Count: 1, } parms, }
-					=> parms[0].Identifier.Text,
-				_ => null,
-			};
+			string? lambdaParamName = GetSingleLambdaParamName(lambda);
 
 			if (lambdaParamName is null)
 			{
@@ -629,7 +614,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 	}
 
 	private static Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> FindAndBuildSetupPropertyCallReplacements(
-		CompilationUnitSyntax compilationUnit,
+		IReadOnlyList<InvocationExpressionSyntax> allInvocations,
 		SemanticModel? semanticModel,
 		ISymbol? mockSymbol,
 		CancellationToken cancellationToken)
@@ -640,7 +625,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		}
 
 		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> result = [];
-		foreach (InvocationExpressionSyntax invocation in compilationUnit.DescendantNodes().OfType<InvocationExpressionSyntax>())
+		foreach (InvocationExpressionSyntax invocation in allInvocations)
 		{
 			if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
 			{
@@ -669,13 +654,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 				continue;
 			}
 
-			string? lambdaParamName = lambda switch
-			{
-				SimpleLambdaExpressionSyntax simple => simple.Parameter.Identifier.Text,
-				ParenthesizedLambdaExpressionSyntax { ParameterList.Parameters: { Count: 1, } parms, }
-					=> parms[0].Identifier.Text,
-				_ => null,
-			};
+			string? lambdaParamName = GetSingleLambdaParamName(lambda);
 
 			if (lambdaParamName is null)
 			{
@@ -763,13 +742,13 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 	}
 
 	private static Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> FindAndBuildCallbackReplacements(
-		CompilationUnitSyntax compilationUnit,
+		IReadOnlyList<InvocationExpressionSyntax> allInvocations,
 		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> setupCallReplacements,
 		out HashSet<InvocationExpressionSyntax> setupsWrappedByCallbacks)
 	{
 		setupsWrappedByCallbacks = [];
 		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> result = [];
-		foreach (InvocationExpressionSyntax invocation in compilationUnit.DescendantNodes().OfType<InvocationExpressionSyntax>())
+		foreach (InvocationExpressionSyntax invocation in allInvocations)
 		{
 			if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
 			{
@@ -854,7 +833,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 	}
 
 	private static Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> FindAndBuildVerifyCallReplacements(
-		CompilationUnitSyntax compilationUnit,
+		IReadOnlyList<InvocationExpressionSyntax> allInvocations,
 		SemanticModel? semanticModel,
 		ISymbol? mockSymbol,
 		CancellationToken cancellationToken)
@@ -865,7 +844,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		}
 
 		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> result = [];
-		foreach (InvocationExpressionSyntax invocation in compilationUnit.DescendantNodes().OfType<InvocationExpressionSyntax>())
+		foreach (InvocationExpressionSyntax invocation in allInvocations)
 		{
 			if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
 			{
@@ -895,13 +874,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 				continue;
 			}
 
-			string? lambdaParamName = lambda switch
-			{
-				SimpleLambdaExpressionSyntax simple => simple.Parameter.Identifier.Text,
-				ParenthesizedLambdaExpressionSyntax { ParameterList.Parameters: { Count: 1, } parms, }
-					=> parms[0].Identifier.Text,
-				_ => null,
-			};
+			string? lambdaParamName = GetSingleLambdaParamName(lambda);
 
 			if (lambdaParamName is null)
 			{
@@ -1101,6 +1074,15 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 			expr,
 			SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(-delta)));
 	}
+
+	private static string? GetSingleLambdaParamName(LambdaExpressionSyntax lambda) =>
+		lambda switch
+		{
+			SimpleLambdaExpressionSyntax simple => simple.Parameter.Identifier.Text,
+			ParenthesizedLambdaExpressionSyntax { ParameterList.Parameters: { Count: 1, } parms, }
+				=> parms[0].Identifier.Text,
+			_ => null,
+		};
 
 	private static List<SimpleNameSyntax>? ExtractNavigationChain(ExpressionSyntax expression, string lambdaParamName)
 	{
