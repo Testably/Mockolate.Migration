@@ -54,6 +54,9 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> setupCallReplacements =
 			FindAndBuildSetupCallReplacements(compilationUnit, semanticModel, mockSymbol, cancellationToken);
 
+		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> callbackReplacements =
+			FindAndBuildCallbackReplacements(compilationUnit, setupCallReplacements, out HashSet<InvocationExpressionSyntax> setupsWrappedByCallbacks);
+
 		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> verifyCallReplacements =
 			FindAndBuildVerifyCallReplacements(compilationUnit, semanticModel, mockSymbol, cancellationToken);
 
@@ -67,7 +70,8 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		}
 
 		nodesToReplace.AddRange(objectAccesses);
-		nodesToReplace.AddRange(setupCallReplacements.Keys);
+		nodesToReplace.AddRange(setupCallReplacements.Keys.Where(k => !setupsWrappedByCallbacks.Contains(k)));
+		nodesToReplace.AddRange(callbackReplacements.Keys);
 		nodesToReplace.AddRange(verifyCallReplacements.Keys);
 		nodesToReplace.AddRange(raiseCallReplacements.Keys);
 
@@ -87,6 +91,11 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 
 				if (original is InvocationExpressionSyntax invocation)
 				{
+					if (callbackReplacements.TryGetValue(invocation, out InvocationExpressionSyntax? callbackReplacement))
+					{
+						return callbackReplacement;
+					}
+
 					if (setupCallReplacements.TryGetValue(invocation, out InvocationExpressionSyntax? setupReplacement))
 					{
 						return setupReplacement;
@@ -430,6 +439,97 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		}
 
 		return result;
+	}
+
+	private static Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> FindAndBuildCallbackReplacements(
+		CompilationUnitSyntax compilationUnit,
+		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> setupCallReplacements,
+		out HashSet<InvocationExpressionSyntax> setupsWrappedByCallbacks)
+	{
+		setupsWrappedByCallbacks = [];
+		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> result = [];
+		foreach (InvocationExpressionSyntax invocation in compilationUnit.DescendantNodes().OfType<InvocationExpressionSyntax>())
+		{
+			if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
+			{
+				continue;
+			}
+
+			if (memberAccess.Name.Identifier.Text != "Callback")
+			{
+				continue;
+			}
+
+			// Walk the receiver chain to find a Setup invocation we're migrating.
+			// Callback may appear anywhere in the chain (e.g. Setup(...).Returns(...).Callback(...)).
+			if (!TryRebuildReceiverWithMigratedSetup(memberAccess.Expression, setupCallReplacements,
+				    out ExpressionSyntax? rebuiltReceiver, out InvocationExpressionSyntax? wrappedSetup))
+			{
+				continue;
+			}
+
+			// Track that this setup must not be independently replaced (it is embedded in the
+			// Callback replacement below, already in its migrated form).
+			setupsWrappedByCallbacks.Add(wrappedSetup!);
+
+			// Replace .Callback<T1, T2, ...>(action) with .Do(action) — type args are dropped
+			// because Mockolate infers them during code generation.
+			// Reuse the original dot token to preserve leading trivia (e.g. newline + indent
+			// when .Callback is written on its own line).
+			InvocationExpressionSyntax replacement = SyntaxFactory.InvocationExpression(
+					SyntaxFactory.MemberAccessExpression(
+						SyntaxKind.SimpleMemberAccessExpression,
+						rebuiltReceiver!,
+						memberAccess.OperatorToken,
+						SyntaxFactory.IdentifierName("Do")),
+					invocation.ArgumentList)
+				.WithTriviaFrom(invocation);
+
+			result[invocation] = replacement;
+		}
+
+		return result;
+	}
+
+	/// <summary>
+	///     Walks <paramref name="expression" /> looking for a Setup invocation that is present in
+	///     <paramref name="setupCallReplacements" />.  When found, returns a rebuilt expression with
+	///     the Setup node substituted by its migrated replacement, preserving all intermediate
+	///     chained calls (e.g. .Returns / .Throws) between the Setup and the Callback.
+	/// </summary>
+	private static bool TryRebuildReceiverWithMigratedSetup(
+		ExpressionSyntax expression,
+		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> setupCallReplacements,
+		out ExpressionSyntax? rebuilt,
+		out InvocationExpressionSyntax? foundSetup)
+	{
+		// Base case: this expression itself is a Setup call we're migrating.
+		if (expression is InvocationExpressionSyntax inv &&
+		    setupCallReplacements.TryGetValue(inv, out InvocationExpressionSyntax? migratedSetup))
+		{
+			rebuilt = migratedSetup;
+			foundSetup = inv;
+			return true;
+		}
+
+		// Recursive case: an invocation chained on something (e.g. .Returns(true) on top of Setup).
+		if (expression is InvocationExpressionSyntax chainedInv &&
+		    chainedInv.Expression is MemberAccessExpressionSyntax chainedMemberAccess &&
+		    TryRebuildReceiverWithMigratedSetup(chainedMemberAccess.Expression, setupCallReplacements,
+			    out ExpressionSyntax? rebuiltInner, out foundSetup))
+		{
+			MemberAccessExpressionSyntax newMemberAccess = SyntaxFactory.MemberAccessExpression(
+				SyntaxKind.SimpleMemberAccessExpression,
+				rebuiltInner!,
+				chainedMemberAccess.OperatorToken,
+				chainedMemberAccess.Name);
+			rebuilt = SyntaxFactory.InvocationExpression(newMemberAccess, chainedInv.ArgumentList);
+			return true;
+		}
+
+		rebuilt = null;
+		foundSetup = null;
+		return false;
 	}
 
 	private static Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> FindAndBuildVerifyCallReplacements(
