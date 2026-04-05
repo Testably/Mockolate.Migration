@@ -8,6 +8,45 @@ public partial class MoqCodeFixProviderTests
 	public sealed class CallbackTests
 	{
 		[Fact]
+		public async Task WithCallbackAfterThrows_MigratedToDo()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using Moq;
+				using System;
+
+				public interface IFoo { bool Bar(string x, int y); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = [|new Mock<IFoo>()|];
+						mock.Setup(m => m.Bar(It.IsAny<string>(), It.IsAny<int>()))
+							.Throws(new NotSupportedException("foo"))
+							.Callback<string, int>((x, y) => { });
+					}
+				}
+				""",
+				"""
+				using Moq;
+				using System;
+				using Mockolate;
+
+				public interface IFoo { bool Bar(string x, int y); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = IFoo.CreateMock();
+						mock.Mock.Setup.Bar(It.IsAny<string>(), It.IsAny<int>())
+							.Throws(new NotSupportedException("foo"))
+							.Do((x, y) => { });
+					}
+				}
+				""");
+
+		[Fact]
 		public async Task WithCallbackMultipleTypeArgs_MigratedToDoWithoutTypeArgs()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
