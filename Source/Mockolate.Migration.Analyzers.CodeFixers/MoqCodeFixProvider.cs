@@ -237,7 +237,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 	private static ArgumentListSyntax TransformMoqItReferences(ArgumentListSyntax args) => args.ReplaceNodes(
 		args.DescendantNodes().OfType<InvocationExpressionSyntax>()
 			.Where(inv => IsMoqItCall(inv, out _, out _)),
-		(original, rewritten) => TransformMoqItInvocation(original, (InvocationExpressionSyntax)rewritten));
+		TransformMoqItInvocation);
 
 	private static SyntaxNode TransformMoqItInvocation(InvocationExpressionSyntax original,
 		InvocationExpressionSyntax rewritten)
