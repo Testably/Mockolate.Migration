@@ -52,7 +52,10 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 					SyntaxKind.SimpleMemberAccessExpression,
 					SyntaxFactory.MemberAccessExpression(
 						SyntaxKind.SimpleMemberAccessExpression,
-						SyntaxFactory.IdentifierName("MockBehavior"),
+						SyntaxFactory.MemberAccessExpression(
+							SyntaxKind.SimpleMemberAccessExpression,
+							SyntaxFactory.IdentifierName("Mockolate"),
+							SyntaxFactory.IdentifierName("MockBehavior")),
 						SyntaxFactory.IdentifierName("Default")),
 					SyntaxFactory.IdentifierName("ThrowingWhenNotSetup")));
 
@@ -181,8 +184,8 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 	{
 		if (semanticModel is not null)
 		{
-			ISymbol? symbol = semanticModel.GetSymbolInfo(argument.Expression, cancellationToken).Symbol;
-			return symbol?.ContainingType?.ToDisplayString() == "Moq.MockBehavior";
+			ITypeSymbol? type = semanticModel.GetTypeInfo(argument.Expression, cancellationToken).Type;
+			return type?.ToDisplayString() == "Moq.MockBehavior";
 		}
 
 		string text = argument.Expression.ToString();

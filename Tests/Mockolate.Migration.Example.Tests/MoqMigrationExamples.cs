@@ -115,7 +115,7 @@ public class MoqMigrationExamples
 
 		// matching regex
 		mock.Setup(x => x.DoSomethingStringy(Moq.It.IsRegex("[a-d]+", RegexOptions.IgnoreCase))).Returns("foo");
-		
+
 		await That(true).IsTrue();
 	}
 
