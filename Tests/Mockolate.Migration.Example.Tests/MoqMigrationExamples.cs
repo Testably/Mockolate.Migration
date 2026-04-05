@@ -139,7 +139,6 @@ public class MoqMigrationExamples
 		mock.SetupProperty(f => f.Name);
 		// alternatively, provide a default value for the stubbed property
 		mock.SetupProperty(f => f.Name, "foo");
-
 		await That(true).IsTrue();
 	}
 

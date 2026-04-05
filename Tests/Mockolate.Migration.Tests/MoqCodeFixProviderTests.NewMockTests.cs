@@ -261,7 +261,7 @@ public partial class MoqCodeFixProviderTests
 				{
 					public void Test()
 					{
-						var mock = IFoo.CreateMock(MockBehavior.Default.ThrowingWhenNotSetup());
+						var mock = IFoo.CreateMock(Mockolate.MockBehavior.Default.ThrowingWhenNotSetup());
 					}
 				}
 				""");
@@ -358,7 +358,7 @@ public partial class MoqCodeFixProviderTests
 				{
 					public void Test()
 					{
-						var mock = IFoo.CreateMock(MockBehavior.Default.ThrowingWhenNotSetup());
+						var mock = IFoo.CreateMock(Mockolate.MockBehavior.Default.ThrowingWhenNotSetup());
 					}
 				}
 				""");
