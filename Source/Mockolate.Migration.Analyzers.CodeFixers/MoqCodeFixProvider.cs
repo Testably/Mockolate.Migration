@@ -9,6 +9,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 #pragma warning disable S1192 // String literals should not be duplicated
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
 namespace Mockolate.Migration.Analyzers;
 
 /// <summary>
@@ -53,6 +54,9 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> setupCallReplacements =
 			FindAndBuildSetupCallReplacements(compilationUnit, semanticModel, mockSymbol, cancellationToken);
 
+		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> verifyCallReplacements =
+			FindAndBuildVerifyCallReplacements(compilationUnit, semanticModel, mockSymbol, cancellationToken);
+
 		List<SyntaxNode> nodesToReplace = [expressionSyntax,];
 		if (replaceDeclarationType)
 		{
@@ -61,6 +65,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 
 		nodesToReplace.AddRange(objectAccesses);
 		nodesToReplace.AddRange(setupCallReplacements.Keys);
+		nodesToReplace.AddRange(verifyCallReplacements.Keys);
 
 		compilationUnit = compilationUnit.ReplaceNodes(
 			nodesToReplace,
@@ -76,10 +81,17 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 					return typeArgument.WithTriviaFrom(declarationType!);
 				}
 
-				if (original is InvocationExpressionSyntax invocation &&
-				    setupCallReplacements.TryGetValue(invocation, out InvocationExpressionSyntax? setupReplacement))
+				if (original is InvocationExpressionSyntax invocation)
 				{
-					return setupReplacement;
+					if (setupCallReplacements.TryGetValue(invocation, out InvocationExpressionSyntax? setupReplacement))
+					{
+						return setupReplacement;
+					}
+
+					if (verifyCallReplacements.TryGetValue(invocation, out InvocationExpressionSyntax? verifyReplacement))
+					{
+						return verifyReplacement;
+					}
 				}
 
 				return original is MemberAccessExpressionSyntax memberAccess
@@ -92,6 +104,16 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		{
 			UsingDirectiveSyntax usingDirective = BuildUsingDirective(compilationUnit, "Mockolate");
 			compilationUnit = compilationUnit.AddUsings(usingDirective);
+		}
+
+		if (verifyCallReplacements.Count > 0)
+		{
+			bool hasVerifyUsing = compilationUnit.Usings.Any(u => u.Name?.ToString() == "Mockolate.Verify");
+			if (!hasVerifyUsing)
+			{
+				UsingDirectiveSyntax verifyUsingDirective = BuildUsingDirective(compilationUnit, "Mockolate.Verify");
+				compilationUnit = compilationUnit.AddUsings(verifyUsingDirective);
+			}
 		}
 
 		return document.WithSyntaxRoot(compilationUnit);
@@ -166,7 +188,6 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		return result;
 	}
 
-#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
 	private static Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> FindAndBuildSetupCallReplacements(
 		CompilationUnitSyntax compilationUnit,
 		SemanticModel? semanticModel,
@@ -282,7 +303,254 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 
 		return result;
 	}
-#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
+
+	private static Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> FindAndBuildVerifyCallReplacements(
+		CompilationUnitSyntax compilationUnit,
+		SemanticModel? semanticModel,
+		ISymbol? mockSymbol,
+		CancellationToken cancellationToken)
+	{
+		if (semanticModel is null || mockSymbol is null)
+		{
+			return [];
+		}
+
+		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> result = [];
+		foreach (InvocationExpressionSyntax invocation in compilationUnit.DescendantNodes().OfType<InvocationExpressionSyntax>())
+		{
+			if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
+			{
+				continue;
+			}
+
+			if (memberAccess.Name.Identifier.Text != "Verify")
+			{
+				continue;
+			}
+
+			SymbolInfo symbolInfo = semanticModel.GetSymbolInfo(memberAccess.Expression, cancellationToken);
+			if (!SymbolEqualityComparer.Default.Equals(symbolInfo.Symbol, mockSymbol))
+			{
+				continue;
+			}
+
+			if (invocation.ArgumentList.Arguments.Count is 0 or > 2 ||
+			    invocation.ArgumentList.Arguments[0].Expression is not LambdaExpressionSyntax lambda)
+			{
+				continue;
+			}
+
+			if (lambda.Body is not InvocationExpressionSyntax lambdaBody ||
+			    lambdaBody.Expression is not MemberAccessExpressionSyntax lambdaMemberAccess)
+			{
+				continue;
+			}
+
+			string? lambdaParamName = lambda switch
+			{
+				SimpleLambdaExpressionSyntax simple => simple.Parameter.Identifier.Text,
+				ParenthesizedLambdaExpressionSyntax { ParameterList.Parameters: { Count: 1, } parms, }
+					=> parms[0].Identifier.Text,
+				_ => null,
+			};
+
+			if (lambdaParamName is null)
+			{
+				continue;
+			}
+
+			List<SimpleNameSyntax>? navigationChain = ExtractNavigationChain(lambdaMemberAccess.Expression, lambdaParamName);
+			if (navigationChain is null)
+			{
+				continue;
+			}
+
+			SimpleNameSyntax methodNameSyntax = lambdaMemberAccess.Name;
+			ArgumentListSyntax transformedArgs = TransformMoqItReferences(lambdaBody.ArgumentList);
+
+			InvocationExpressionSyntax baseInvocation;
+			if (navigationChain.Count == 0)
+			{
+				MemberAccessExpressionSyntax mockAccess = SyntaxFactory.MemberAccessExpression(
+					SyntaxKind.SimpleMemberAccessExpression,
+					memberAccess.Expression,
+					SyntaxFactory.IdentifierName("Mock"));
+				MemberAccessExpressionSyntax verifyAccess = SyntaxFactory.MemberAccessExpression(
+					SyntaxKind.SimpleMemberAccessExpression,
+					mockAccess,
+					SyntaxFactory.IdentifierName("Verify"));
+				MemberAccessExpressionSyntax methodAccess = SyntaxFactory.MemberAccessExpression(
+					SyntaxKind.SimpleMemberAccessExpression,
+					verifyAccess,
+					methodNameSyntax);
+				baseInvocation = SyntaxFactory.InvocationExpression(methodAccess, transformedArgs);
+			}
+			else
+			{
+				ExpressionSyntax navChain = memberAccess.Expression;
+				foreach (SimpleNameSyntax nav in navigationChain)
+				{
+					navChain = SyntaxFactory.MemberAccessExpression(
+						SyntaxKind.SimpleMemberAccessExpression,
+						navChain,
+						nav);
+				}
+
+				MemberAccessExpressionSyntax mockAccess = SyntaxFactory.MemberAccessExpression(
+					SyntaxKind.SimpleMemberAccessExpression,
+					navChain,
+					SyntaxFactory.IdentifierName("Mock"));
+				MemberAccessExpressionSyntax verifyAccess = SyntaxFactory.MemberAccessExpression(
+					SyntaxKind.SimpleMemberAccessExpression,
+					mockAccess,
+					SyntaxFactory.IdentifierName("Verify"));
+				MemberAccessExpressionSyntax methodAccess = SyntaxFactory.MemberAccessExpression(
+					SyntaxKind.SimpleMemberAccessExpression,
+					verifyAccess,
+					methodNameSyntax);
+				baseInvocation = SyntaxFactory.InvocationExpression(methodAccess, transformedArgs);
+			}
+
+			InvocationExpressionSyntax replacement;
+			if (invocation.ArgumentList.Arguments.Count == 2)
+			{
+				ExpressionSyntax timesArg = invocation.ArgumentList.Arguments[1].Expression;
+				InvocationExpressionSyntax? withTimes = ApplyTimesChain(baseInvocation, timesArg);
+				if (withTimes is null)
+				{
+					continue;
+				}
+
+				replacement = withTimes.WithTriviaFrom(invocation);
+			}
+			else
+			{
+				replacement = SyntaxFactory.InvocationExpression(
+						SyntaxFactory.MemberAccessExpression(
+							SyntaxKind.SimpleMemberAccessExpression,
+							baseInvocation,
+							SyntaxFactory.IdentifierName("AtLeastOnce")),
+						SyntaxFactory.ArgumentList())
+					.WithTriviaFrom(invocation);
+			}
+
+			result[invocation] = replacement;
+		}
+
+		return result;
+	}
+
+	private static InvocationExpressionSyntax? ApplyTimesChain(
+		InvocationExpressionSyntax baseInvocation, ExpressionSyntax timesArg)
+	{
+		(string? methodName, ArgumentListSyntax? methodArgs) = ExtractTimesMethodCall(timesArg);
+		if (methodName is null || methodArgs is null)
+		{
+			return null;
+		}
+
+		return SyntaxFactory.InvocationExpression(
+			SyntaxFactory.MemberAccessExpression(
+				SyntaxKind.SimpleMemberAccessExpression,
+				baseInvocation,
+				SyntaxFactory.IdentifierName(methodName)),
+			methodArgs);
+	}
+
+	private static (string? MethodName, ArgumentListSyntax? Args) ExtractTimesMethodCall(ExpressionSyntax timesArg)
+	{
+		switch (timesArg)
+		{
+			// Times.Never / Times.Once / Times.AtLeastOnce / Times.AtMostOnce  (property access, no call)
+			case MemberAccessExpressionSyntax { Name.Identifier.Text: var name, Expression: var expr, }
+				when IsTimesExpression(expr) && IsNoArgTimesName(name):
+				return (name, SyntaxFactory.ArgumentList());
+
+			// Times.Never() / Times.Once() / Times.AtLeastOnce() / Times.AtMostOnce()  (0-arg call)
+			case InvocationExpressionSyntax
+				{
+					Expression: MemberAccessExpressionSyntax { Name.Identifier.Text: var name, Expression: var expr, },
+					ArgumentList.Arguments.Count: 0,
+				}
+				when IsTimesExpression(expr) && IsNoArgTimesName(name):
+				return (name, SyntaxFactory.ArgumentList());
+
+			// Times.AtLeast(n) / Times.AtMost(n) / Times.Exactly(n)
+			case InvocationExpressionSyntax
+				{
+					Expression: MemberAccessExpressionSyntax { Name.Identifier.Text: var name, Expression: var expr, },
+					ArgumentList: { Arguments.Count: 1, } argList,
+				}
+				when IsTimesExpression(expr) && IsOneArgTimesName(name):
+				return (name, argList);
+
+			// Times.Between(min, max, Range.Inclusive/Exclusive)
+			case InvocationExpressionSyntax
+				{
+					Expression: MemberAccessExpressionSyntax { Name.Identifier.Text: "Between", Expression: var expr, },
+					ArgumentList: { Arguments.Count: 3, } argList,
+				}
+				when IsTimesExpression(expr):
+				{
+					bool isExclusive = argList.Arguments[2].Expression is
+						MemberAccessExpressionSyntax { Name.Identifier.Text: "Exclusive", };
+
+					if (isExclusive)
+					{
+						ExpressionSyntax minExpr = AdjustIntBoundary(argList.Arguments[0].Expression, 1);
+						ExpressionSyntax maxExpr = AdjustIntBoundary(argList.Arguments[1].Expression, -1);
+						return ("Between", SyntaxFactory.ArgumentList(
+							SyntaxFactory.SeparatedList([
+								SyntaxFactory.Argument(minExpr),
+								SyntaxFactory.Argument(maxExpr),
+							])));
+					}
+
+					return ("Between", SyntaxFactory.ArgumentList(
+						SyntaxFactory.SeparatedList(argList.Arguments.Take(2))));
+				}
+
+			default:
+				return (null, null);
+		}
+	}
+
+	private static bool IsTimesExpression(ExpressionSyntax expression) =>
+		expression is IdentifierNameSyntax { Identifier.Text: "Times", }
+		|| expression is MemberAccessExpressionSyntax
+		{
+			Expression: IdentifierNameSyntax { Identifier.Text: "Moq", },
+			Name.Identifier.Text: "Times",
+		};
+
+	private static bool IsNoArgTimesName(string name) =>
+		name is "Never" or "Once" or "AtLeastOnce" or "AtMostOnce";
+
+	private static bool IsOneArgTimesName(string name) =>
+		name is "AtLeast" or "AtMost" or "Exactly";
+
+	private static ExpressionSyntax AdjustIntBoundary(ExpressionSyntax expr, int delta)
+	{
+		if (expr is LiteralExpressionSyntax literal && literal.Token.Value is int value)
+		{
+			return SyntaxFactory.LiteralExpression(
+				SyntaxKind.NumericLiteralExpression,
+				SyntaxFactory.Literal(value + delta));
+		}
+
+		if (delta > 0)
+		{
+			return SyntaxFactory.BinaryExpression(
+				SyntaxKind.AddExpression,
+				expr,
+				SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(delta)));
+		}
+
+		return SyntaxFactory.BinaryExpression(
+			SyntaxKind.SubtractExpression,
+			expr,
+			SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(-delta)));
+	}
 
 	private static List<SimpleNameSyntax>? ExtractNavigationChain(ExpressionSyntax expression, string lambdaParamName)
 	{
@@ -487,4 +755,5 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 	}
 }
 
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
 #pragma warning restore S1192
