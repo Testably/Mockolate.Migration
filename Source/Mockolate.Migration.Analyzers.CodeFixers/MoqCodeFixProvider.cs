@@ -32,10 +32,15 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 
 		TypeSyntax? typeArgument = expressionSyntax switch
 		{
-			ObjectCreationExpressionSyntax { Type: GenericNameSyntax { TypeArgumentList.Arguments: { Count: 1 } args } }
-				=> args[0],
-			ImplicitObjectCreationExpressionSyntax => await GetTypeArgumentFromSemanticModel(
-				document, expressionSyntax, cancellationToken).ConfigureAwait(false),
+			ObjectCreationExpressionSyntax
+			{
+				Type: GenericNameSyntax { TypeArgumentList.Arguments: { Count: 1, } args, },
+				ArgumentList.Arguments.Count: 0,
+				Initializer: null,
+			} => args[0],
+			ImplicitObjectCreationExpressionSyntax { ArgumentList.Arguments.Count: 0, Initializer: null, }
+				=> await GetTypeArgumentFromSemanticModel(document, expressionSyntax, cancellationToken)
+					.ConfigureAwait(false),
 			_ => null,
 		};
 
@@ -52,10 +57,10 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 			.WithTriviaFrom(expressionSyntax);
 
 		TypeSyntax? declarationType = GetDeclarationTypeSyntax(expressionSyntax);
-		if (declarationType is not null && declarationType is not IdentifierNameSyntax { IsVar: true })
+		if (declarationType is not null && declarationType is not IdentifierNameSyntax { IsVar: true, })
 		{
 			compilationUnit = compilationUnit.ReplaceNodes(
-				[expressionSyntax, declarationType],
+				[expressionSyntax, declarationType,],
 				(original, _) => original == expressionSyntax
 					? createMockCall
 					: typeArgument.WithTriviaFrom(declarationType));
@@ -78,8 +83,8 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 	private static TypeSyntax? GetDeclarationTypeSyntax(ExpressionSyntax expressionSyntax) =>
 		expressionSyntax.Parent switch
 		{
-			EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax decl } } => decl.Type,
-			EqualsValueClauseSyntax { Parent: PropertyDeclarationSyntax prop } => prop.Type,
+			EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax decl, }, } => decl.Type,
+			EqualsValueClauseSyntax { Parent: PropertyDeclarationSyntax prop, } => prop.Type,
 			_ => null,
 		};
 
@@ -90,8 +95,12 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		UsingDirectiveSyntax? template = compilationUnit.Usings.LastOrDefault();
 		if (template is not null)
 		{
-			// Reuse the last using's semicolon trivia so the line ending style matches the file
-			return template.WithName(name);
+			// Build a fresh, unmodified directive and copy only the semicolon token trivia
+			// (line-ending style) from the template, avoiding accidental inheritance of
+			// global/static/alias modifiers that would produce invalid or overly-broad usings.
+			SyntaxToken semicolon = SyntaxFactory.Token(SyntaxKind.SemicolonToken)
+				.WithTriviaFrom(template.SemicolonToken);
+			return SyntaxFactory.UsingDirective(name).WithSemicolonToken(semicolon);
 		}
 
 		return SyntaxFactory.UsingDirective(name);
@@ -109,7 +118,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		}
 
 		TypeInfo typeInfo = semanticModel.GetTypeInfo(expressionSyntax, cancellationToken);
-		if (typeInfo.ConvertedType is INamedTypeSymbol { TypeArguments.Length: 1 } namedType)
+		if (typeInfo.ConvertedType is INamedTypeSymbol { TypeArguments.Length: 1, } namedType)
 		{
 			return SyntaxFactory.ParseTypeName(namedType.TypeArguments[0].ToDisplayString()).WithoutTrivia();
 		}
