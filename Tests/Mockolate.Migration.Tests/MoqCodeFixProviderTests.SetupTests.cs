@@ -212,5 +212,116 @@ public partial class MoqCodeFixProviderTests
 					}
 				}
 				""");
+
+		[Fact]
+		public async Task Method_WithOutParameter_MigratedToIsOut()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using Moq;
+
+				public interface IFoo { bool TryParse(string value, out string outputValue); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = [|new Mock<IFoo>()|];
+						string outString = "ack";
+						mock.Setup(foo => foo.TryParse("ping", out outString)).Returns(true);
+					}
+				}
+				""",
+				"""
+				using Moq;
+				using Mockolate;
+
+				public interface IFoo { bool TryParse(string value, out string outputValue); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = IFoo.CreateMock();
+						string outString = "ack";
+						mock.Mock.Setup.TryParse("ping", It.IsOut(() => outString)).Returns(true);
+					}
+				}
+				""");
+
+		[Fact]
+		public async Task Method_WithRefItRefIsAny_MigratedToIsAnyRef()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using Moq;
+
+				public class Bar { }
+
+				public interface IFoo { bool Submit(ref Bar bar); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = [|new Mock<IFoo>()|];
+						mock.Setup(foo => foo.Submit(ref Moq.It.Ref<Bar>.IsAny)).Returns(true);
+					}
+				}
+				""",
+				"""
+				using Moq;
+				using Mockolate;
+
+				public class Bar { }
+
+				public interface IFoo { bool Submit(ref Bar bar); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = IFoo.CreateMock();
+						mock.Mock.Setup.Submit(It.IsAnyRef<Bar>()).Returns(true);
+					}
+				}
+				""");
+
+		[Fact]
+		public async Task Method_WithRefParameter_MigratedToIsRef()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using Moq;
+
+				public class Bar { }
+
+				public interface IFoo { bool Submit(ref Bar bar); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = [|new Mock<IFoo>()|];
+						Bar instance = new();
+						mock.Setup(foo => foo.Submit(ref instance)).Returns(true);
+					}
+				}
+				""",
+				"""
+				using Moq;
+				using Mockolate;
+
+				public class Bar { }
+
+				public interface IFoo { bool Submit(ref Bar bar); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = IFoo.CreateMock();
+						Bar instance = new();
+						mock.Mock.Setup.Submit(It.IsRef<Bar>(_ => instance)).Returns(true);
+					}
+				}
+				""");
 	}
 }

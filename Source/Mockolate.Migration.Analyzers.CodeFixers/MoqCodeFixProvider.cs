@@ -390,7 +390,8 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 			}
 
 			SimpleNameSyntax methodNameSyntax = lambdaMemberAccess.Name;
-			ArgumentListSyntax transformedArgs = TransformMoqItReferences(lambdaBody.ArgumentList);
+			ArgumentListSyntax transformedArgs = TransformMoqItReferences(
+				TransformRefAndOutArguments(lambdaBody.ArgumentList, semanticModel, cancellationToken));
 
 			InvocationExpressionSyntax replacement;
 			if (navigationChain.Count == 0)
@@ -594,7 +595,8 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 			}
 
 			SimpleNameSyntax methodNameSyntax = lambdaMemberAccess.Name;
-			ArgumentListSyntax transformedArgs = TransformMoqItReferences(lambdaBody.ArgumentList);
+			ArgumentListSyntax transformedArgs = TransformMoqItReferences(
+				TransformRefAndOutArguments(lambdaBody.ArgumentList, semanticModel, cancellationToken));
 
 			InvocationExpressionSyntax baseInvocation;
 			if (navigationChain.Count == 0)
@@ -924,6 +926,107 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 
 		methodName = memberAccess.Name.Identifier.Text;
 		typeArgs = (memberAccess.Name as GenericNameSyntax)?.TypeArgumentList;
+		return true;
+	}
+
+	private static ArgumentListSyntax TransformRefAndOutArguments(
+		ArgumentListSyntax args,
+		SemanticModel? semanticModel,
+		CancellationToken cancellationToken)
+	{
+		IdentifierNameSyntax itIdentifier = SyntaxFactory.IdentifierName("It");
+
+		return args.ReplaceNodes(
+			args.Arguments.Where(a =>
+				a.RefKindKeyword.IsKind(SyntaxKind.OutKeyword) ||
+				a.RefKindKeyword.IsKind(SyntaxKind.RefKeyword)),
+			(original, _) =>
+			{
+				ExpressionSyntax expr = original.Expression.WithoutTrivia();
+
+				if (original.RefKindKeyword.IsKind(SyntaxKind.OutKeyword))
+				{
+					// out varName → It.IsOut(() => varName)
+					ParenthesizedLambdaExpressionSyntax lambda = SyntaxFactory.ParenthesizedLambdaExpression(expr);
+					InvocationExpressionSyntax isOut = BuildItInvocation(
+						itIdentifier, "IsOut", null,
+						SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList([SyntaxFactory.Argument(lambda),])));
+					return SyntaxFactory.Argument(isOut).WithTriviaFrom(original);
+				}
+
+				// ref Moq.It.Ref<T>.IsAny → It.IsAnyRef<T>()
+				if (TryExtractItRefIsAnyTypeArgs(original.Expression, out TypeArgumentListSyntax? isAnyTypeArgs))
+				{
+					InvocationExpressionSyntax isAnyRef = BuildItInvocation(
+						itIdentifier, "IsAnyRef", isAnyTypeArgs,
+						SyntaxFactory.ArgumentList());
+					return SyntaxFactory.Argument(isAnyRef).WithTriviaFrom(original);
+				}
+
+				// ref expr → It.IsRef<T>(_ => expr)
+				TypeArgumentListSyntax? typeArgs = null;
+				if (semanticModel is not null)
+				{
+					ITypeSymbol? typeSymbol = semanticModel.GetTypeInfo(original.Expression, cancellationToken).Type;
+					if (typeSymbol is not null)
+					{
+						TypeSyntax typeSyntax = SyntaxFactory.ParseTypeName(
+							typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)).WithoutTrivia();
+						typeArgs = SyntaxFactory.TypeArgumentList(SyntaxFactory.SeparatedList([typeSyntax,]));
+					}
+				}
+
+				SimpleLambdaExpressionSyntax refLambda = SyntaxFactory.SimpleLambdaExpression(
+					SyntaxFactory.Parameter(SyntaxFactory.Identifier("_")),
+					expr);
+				InvocationExpressionSyntax isRef = BuildItInvocation(
+					itIdentifier, "IsRef", typeArgs,
+					SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList([SyntaxFactory.Argument(refLambda),])));
+				return SyntaxFactory.Argument(isRef).WithTriviaFrom(original);
+			});
+	}
+
+	/// <summary>
+	///     Matches <c>[Moq.]It.Ref&lt;T&gt;.IsAny</c> and returns the type argument list.
+	/// </summary>
+	private static bool TryExtractItRefIsAnyTypeArgs(ExpressionSyntax expression,
+		out TypeArgumentListSyntax? typeArgs)
+	{
+		typeArgs = null;
+		// expression must be: <receiver>.IsAny
+		if (expression is not MemberAccessExpressionSyntax { Name.Identifier.Text: "IsAny", } isAnyAccess)
+		{
+			return false;
+		}
+
+		// receiver must be: It.Ref<T> or Moq.It.Ref<T>
+		if (isAnyAccess.Expression is not MemberAccessExpressionSyntax refAccess)
+		{
+			return false;
+		}
+
+		if (refAccess.Name is not GenericNameSyntax { Identifier.Text: "Ref", TypeArgumentList: var tArgs, })
+		{
+			return false;
+		}
+
+		bool isIt = refAccess.Expression switch
+		{
+			IdentifierNameSyntax { Identifier.Text: "It", } => true,
+			MemberAccessExpressionSyntax
+			{
+				Expression: IdentifierNameSyntax { Identifier.Text: "Moq", },
+				Name.Identifier.Text: "It",
+			} => true,
+			_ => false,
+		};
+
+		if (!isIt)
+		{
+			return false;
+		}
+
+		typeArgs = tArgs;
 		return true;
 	}
 
