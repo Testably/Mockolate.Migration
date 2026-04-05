@@ -621,4 +621,37 @@ public class MoqCodeFixProviderTests
 			  	}
 			  }
 			  """);
+
+	[Fact]
+	public async Task VerifyWithUnrecognizedTimesArg_PreservesOriginalVerifyCall()
+		=> await Verifier.VerifyCodeFixAsync(
+			"""
+			using Moq;
+
+			public interface IFoo { void Bar(); }
+
+			public class Tests
+			{
+				public void Test(Times timesVar)
+				{
+					var mock = [|new Mock<IFoo>()|];
+					mock.Verify(m => m.Bar(), timesVar);
+				}
+			}
+			""",
+			"""
+			using Moq;
+			using Mockolate;
+
+			public interface IFoo { void Bar(); }
+
+			public class Tests
+			{
+				public void Test(Times timesVar)
+				{
+					var mock = IFoo.CreateMock();
+					mock.Verify(m => m.Bar(), timesVar);
+				}
+			}
+			""");
 }

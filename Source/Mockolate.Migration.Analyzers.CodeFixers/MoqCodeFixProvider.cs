@@ -9,6 +9,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 #pragma warning disable S1192 // String literals should not be duplicated
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
 namespace Mockolate.Migration.Analyzers;
 
 /// <summary>
@@ -187,7 +188,6 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		return result;
 	}
 
-#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
 	private static Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> FindAndBuildSetupCallReplacements(
 		CompilationUnitSyntax compilationUnit,
 		SemanticModel? semanticModel,
@@ -303,9 +303,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 
 		return result;
 	}
-#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
 
-#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
 	private static Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> FindAndBuildVerifyCallReplacements(
 		CompilationUnitSyntax compilationUnit,
 		SemanticModel? semanticModel,
@@ -417,7 +415,13 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 			if (invocation.ArgumentList.Arguments.Count == 2)
 			{
 				ExpressionSyntax timesArg = invocation.ArgumentList.Arguments[1].Expression;
-				replacement = ApplyTimesChain(baseInvocation, timesArg).WithTriviaFrom(invocation);
+				InvocationExpressionSyntax? withTimes = ApplyTimesChain(baseInvocation, timesArg);
+				if (withTimes is null)
+				{
+					continue;
+				}
+
+				replacement = withTimes.WithTriviaFrom(invocation);
 			}
 			else
 			{
@@ -435,15 +439,14 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 
 		return result;
 	}
-#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
 
-	private static InvocationExpressionSyntax ApplyTimesChain(
+	private static InvocationExpressionSyntax? ApplyTimesChain(
 		InvocationExpressionSyntax baseInvocation, ExpressionSyntax timesArg)
 	{
 		(string? methodName, ArgumentListSyntax? methodArgs) = ExtractTimesMethodCall(timesArg);
 		if (methodName is null || methodArgs is null)
 		{
-			return baseInvocation;
+			return null;
 		}
 
 		return SyntaxFactory.InvocationExpression(
@@ -752,4 +755,5 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 	}
 }
 
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
 #pragma warning restore S1192
