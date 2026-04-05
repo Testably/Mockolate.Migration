@@ -52,6 +52,8 @@ public class MoqMigrationExamples
 
 		// matching regex
 		mock.Mock.Setup.DoSomethingStringy(It.Matches("[a-d]+").AsRegex(RegexOptions.IgnoreCase)).Returns("foo");
+
+		await That(true).IsTrue();
 	}
 
 	/// <summary>
@@ -105,6 +107,8 @@ public class MoqMigrationExamples
 
 		// matching regex
 		mock.Setup(x => x.DoSomethingStringy(Moq.It.IsRegex("[a-d]+", RegexOptions.IgnoreCase))).Returns("foo");
+		
+		await That(true).IsTrue();
 	}
 
 	public interface IFoo
@@ -124,12 +128,12 @@ public class MoqMigrationExamples
 
 	public class Bar
 	{
-		public virtual Baz Baz { get; set; }
+		public virtual Baz? Baz { get; set; }
 		public virtual bool Submit() => false;
 	}
 
 	public class Baz
 	{
-		public virtual string Name { get; set; }
+		public virtual string Name { get; set; } = "";
 	}
 }
