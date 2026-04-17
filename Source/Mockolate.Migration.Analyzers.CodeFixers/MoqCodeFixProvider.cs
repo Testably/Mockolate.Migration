@@ -1171,7 +1171,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 				    && assignment.IsKind(SyntaxKind.SimpleAssignmentExpression))
 				{
 					propertyAccess = setAccess;
-					setValueArgs = BuildVerifySetArgs(assignment.Right, semanticModel, cancellationToken);
+					setValueArgs = BuildVerifySetArgs(assignment.Right);
 				}
 				else if (lambda.Body is MemberAccessExpressionSyntax bareAccess)
 				{
@@ -1252,9 +1252,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 	}
 
 	private static ArgumentListSyntax BuildVerifySetArgs(
-		ExpressionSyntax valueExpression,
-		SemanticModel? semanticModel,
-		CancellationToken cancellationToken)
+		ExpressionSyntax valueExpression)
 	{
 		// Rewrite any Moq It.* matchers inside the value expression first.
 		ArgumentListSyntax wrapped = SyntaxFactory.ArgumentList(
