@@ -8,6 +8,41 @@ public partial class MoqCodeFixProviderTests
 	public sealed class VerifyEventTests
 	{
 		[Fact]
+		public async Task VerifyAdd_OnDelegateProperty_DoesNotMigrateToSubscribed()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using Moq;
+				using System;
+
+				public interface IFoo { Action MyHandler { get; set; } }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = [|new Mock<IFoo>()|];
+						mock.VerifyAdd(m => m.MyHandler += It.IsAny<Action>(), Times.AtLeastOnce);
+					}
+				}
+				""",
+				"""
+				using Moq;
+				using System;
+				using Mockolate;
+
+				public interface IFoo { Action MyHandler { get; set; } }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = IFoo.CreateMock();
+						mock.VerifyAdd(m => m.MyHandler += It.IsAny<Action>(), Times.AtLeastOnce);
+					}
+				}
+				""");
+
+		[Fact]
 		public async Task VerifyAdd_WithCustomDelegate_MigratesSubscribed()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -149,6 +184,44 @@ public partial class MoqCodeFixProviderTests
 					{
 						var mock = IFoo.CreateMock();
 						mock.Mock.Verify.MyEvent.Subscribed().Once();
+					}
+				}
+				""");
+
+		[Fact]
+		public async Task VerifyAdd_WithUntranslatableTimes_FallsBackToAtLeastOnce()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using Moq;
+				using System;
+
+				public interface IFoo { event EventHandler MyEvent; }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var times = Times.Once();
+						var mock = [|new Mock<IFoo>()|];
+						mock.VerifyAdd(m => m.MyEvent += It.IsAny<EventHandler>(), times);
+					}
+				}
+				""",
+				"""
+				using Moq;
+				using System;
+				using Mockolate;
+				using Mockolate.Verify;
+
+				public interface IFoo { event EventHandler MyEvent; }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var times = Times.Once();
+						var mock = IFoo.CreateMock();
+						mock.Mock.Verify.MyEvent.Subscribed().AtLeastOnce();
 					}
 				}
 				""");

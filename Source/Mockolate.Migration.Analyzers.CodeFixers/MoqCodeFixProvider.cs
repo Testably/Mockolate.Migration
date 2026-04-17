@@ -1030,6 +1030,13 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 				continue;
 			}
 
+			// LHS of += / -= must bind to an event, not a delegate field/property — otherwise
+			// the generated Verify.<name>.Subscribed() chain would reference a non-existent member.
+			if (semanticModel.GetSymbolInfo(eventAccess, cancellationToken).Symbol is not IEventSymbol)
+			{
+				continue;
+			}
+
 			string? lambdaParamName = GetSingleLambdaParamName(lambda);
 			if (lambdaParamName is null)
 			{
@@ -1072,28 +1079,20 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 					SyntaxFactory.IdentifierName(eventSubscriptionMethod)),
 				SyntaxFactory.ArgumentList());
 
-			InvocationExpressionSyntax replacement;
-			if (invocation.ArgumentList.Arguments.Count == 2)
-			{
-				ExpressionSyntax timesArg = invocation.ArgumentList.Arguments[1].Expression;
-				InvocationExpressionSyntax? withTimes = ApplyTimesChain(baseInvocation, timesArg);
-				if (withTimes is null)
-				{
-					continue;
-				}
+			InvocationExpressionSyntax atLeastOnceFallback = SyntaxFactory.InvocationExpression(
+				SyntaxFactory.MemberAccessExpression(
+					SyntaxKind.SimpleMemberAccessExpression,
+					baseInvocation,
+					SyntaxFactory.IdentifierName("AtLeastOnce")),
+				SyntaxFactory.ArgumentList());
 
-				replacement = withTimes.WithTriviaFrom(invocation);
-			}
-			else
-			{
-				replacement = SyntaxFactory.InvocationExpression(
-						SyntaxFactory.MemberAccessExpression(
-							SyntaxKind.SimpleMemberAccessExpression,
-							baseInvocation,
-							SyntaxFactory.IdentifierName("AtLeastOnce")),
-						SyntaxFactory.ArgumentList())
-					.WithTriviaFrom(invocation);
-			}
+			// Fall back to AtLeastOnce when the Times argument can't be translated — the
+			// Mock<T>() construction is unconditionally rewritten, so leaving the original
+			// VerifyAdd/VerifyRemove in place would produce non-compiling code.
+			InvocationExpressionSyntax replacement = invocation.ArgumentList.Arguments.Count == 2
+				? (ApplyTimesChain(baseInvocation, invocation.ArgumentList.Arguments[1].Expression) ?? atLeastOnceFallback)
+				.WithTriviaFrom(invocation)
+				: atLeastOnceFallback.WithTriviaFrom(invocation);
 
 			result[invocation] = replacement;
 		}
