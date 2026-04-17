@@ -93,6 +93,9 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> verifyEventCallReplacements =
 			FindAndBuildVerifyEventCallReplacements(allInvocations, semanticModel, mockSymbol, cancellationToken);
 
+		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> verifyPropertyCallReplacements =
+			FindAndBuildVerifyPropertyCallReplacements(allInvocations, semanticModel, mockSymbol, cancellationToken);
+
 		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> raiseCallReplacements =
 			FindAndBuildRaiseCallReplacements(allInvocations, semanticModel, mockSymbol, cancellationToken);
 
@@ -109,6 +112,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		nodesToReplace.AddRange(callbackReplacements.Keys);
 		nodesToReplace.AddRange(verifyCallReplacements.Keys);
 		nodesToReplace.AddRange(verifyEventCallReplacements.Keys);
+		nodesToReplace.AddRange(verifyPropertyCallReplacements.Keys);
 		nodesToReplace.AddRange(raiseCallReplacements.Keys);
 
 		compilationUnit = compilationUnit.ReplaceNodes(
@@ -157,6 +161,11 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 						return verifyEventReplacement;
 					}
 
+					if (verifyPropertyCallReplacements.TryGetValue(invocation, out InvocationExpressionSyntax? verifyPropertyReplacement))
+					{
+						return verifyPropertyReplacement;
+					}
+
 					if (raiseCallReplacements.TryGetValue(invocation, out InvocationExpressionSyntax? raiseReplacement))
 					{
 						return raiseReplacement;
@@ -175,7 +184,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 			compilationUnit = compilationUnit.AddUsings(usingDirective);
 		}
 
-		if (verifyCallReplacements.Count > 0 || verifyEventCallReplacements.Count > 0)
+		if (verifyCallReplacements.Count > 0 || verifyEventCallReplacements.Count > 0 || verifyPropertyCallReplacements.Count > 0)
 		{
 			bool hasVerifyUsing = compilationUnit.Usings.Any(u => u.Name?.ToString() == "Mockolate.Verify");
 			if (!hasVerifyUsing)
@@ -538,7 +547,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 				continue;
 			}
 
-			if (memberAccess.Name.Identifier.Text != "Setup")
+			if (memberAccess.Name.Identifier.Text is not ("Setup" or "SetupGet"))
 			{
 				continue;
 			}
@@ -1100,6 +1109,170 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		return result;
 	}
 
+	private static Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> FindAndBuildVerifyPropertyCallReplacements(
+		IReadOnlyList<InvocationExpressionSyntax> allInvocations,
+		SemanticModel? semanticModel,
+		ISymbol? mockSymbol,
+		CancellationToken cancellationToken)
+	{
+		if (semanticModel is null || mockSymbol is null)
+		{
+			return [];
+		}
+
+		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> result = [];
+		foreach (InvocationExpressionSyntax invocation in allInvocations)
+		{
+			if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
+			{
+				continue;
+			}
+
+			string methodName = memberAccess.Name.Identifier.Text;
+			if (methodName is not ("VerifyGet" or "VerifySet"))
+			{
+				continue;
+			}
+
+			SymbolInfo symbolInfo = semanticModel.GetSymbolInfo(memberAccess.Expression, cancellationToken);
+			if (!SymbolEqualityComparer.Default.Equals(symbolInfo.Symbol, mockSymbol))
+			{
+				continue;
+			}
+
+			if (invocation.ArgumentList.Arguments.Count is 0 or > 2 ||
+			    invocation.ArgumentList.Arguments[0].Expression is not LambdaExpressionSyntax lambda)
+			{
+				continue;
+			}
+
+			string? lambdaParamName = GetSingleLambdaParamName(lambda);
+			if (lambdaParamName is null)
+			{
+				continue;
+			}
+
+			MemberAccessExpressionSyntax? propertyAccess;
+			ArgumentListSyntax? setValueArgs = null;
+
+			if (methodName == "VerifyGet")
+			{
+				if (lambda.Body is not MemberAccessExpressionSyntax getAccess)
+				{
+					continue;
+				}
+
+				propertyAccess = getAccess;
+			}
+			else
+			{
+				// VerifySet: lambda body is either an assignment (= value) or a property access (no value matcher)
+				if (lambda.Body is AssignmentExpressionSyntax { Left: MemberAccessExpressionSyntax setAccess, } assignment
+				    && assignment.IsKind(SyntaxKind.SimpleAssignmentExpression))
+				{
+					propertyAccess = setAccess;
+					setValueArgs = BuildVerifySetArgs(assignment.Right);
+				}
+				else if (lambda.Body is MemberAccessExpressionSyntax bareAccess)
+				{
+					propertyAccess = bareAccess;
+					setValueArgs = SyntaxFactory.ArgumentList();
+				}
+				else
+				{
+					continue;
+				}
+			}
+
+			List<SimpleNameSyntax>? navigationChain = ExtractNavigationChain(propertyAccess.Expression, lambdaParamName);
+			if (navigationChain is null)
+			{
+				continue;
+			}
+
+			SimpleNameSyntax propertyNameSyntax = propertyAccess.Name;
+
+			ExpressionSyntax receiver = memberAccess.Expression;
+			foreach (SimpleNameSyntax nav in navigationChain)
+			{
+				receiver = SyntaxFactory.MemberAccessExpression(
+					SyntaxKind.SimpleMemberAccessExpression,
+					receiver,
+					nav);
+			}
+
+			MemberAccessExpressionSyntax mockAccess = SyntaxFactory.MemberAccessExpression(
+				SyntaxKind.SimpleMemberAccessExpression,
+				receiver,
+				SyntaxFactory.IdentifierName("Mock"));
+			MemberAccessExpressionSyntax verifyAccess = SyntaxFactory.MemberAccessExpression(
+				SyntaxKind.SimpleMemberAccessExpression,
+				mockAccess,
+				SyntaxFactory.IdentifierName("Verify"));
+			MemberAccessExpressionSyntax propertyMemberAccess = SyntaxFactory.MemberAccessExpression(
+				SyntaxKind.SimpleMemberAccessExpression,
+				verifyAccess,
+				propertyNameSyntax);
+
+			string verifyMethod = methodName == "VerifyGet" ? "Got" : "Set";
+			InvocationExpressionSyntax baseInvocation = SyntaxFactory.InvocationExpression(
+				SyntaxFactory.MemberAccessExpression(
+					SyntaxKind.SimpleMemberAccessExpression,
+					propertyMemberAccess,
+					SyntaxFactory.IdentifierName(verifyMethod)),
+				setValueArgs ?? SyntaxFactory.ArgumentList());
+
+			InvocationExpressionSyntax atLeastOnceFallback = SyntaxFactory.InvocationExpression(
+				SyntaxFactory.MemberAccessExpression(
+					SyntaxKind.SimpleMemberAccessExpression,
+					baseInvocation,
+					SyntaxFactory.IdentifierName("AtLeastOnce")),
+				SyntaxFactory.ArgumentList());
+
+			// Fall back to AtLeastOnce when the Times argument can't be translated — the
+			// Mock<T>() construction is unconditionally rewritten, so leaving the original
+			// VerifyGet/VerifySet in place would produce non-compiling code.
+			InvocationExpressionSyntax replacement = invocation.ArgumentList.Arguments.Count == 2
+				? (ApplyTimesChain(baseInvocation, invocation.ArgumentList.Arguments[1].Expression) ?? atLeastOnceFallback)
+				.WithTriviaFrom(invocation)
+				: atLeastOnceFallback.WithTriviaFrom(invocation);
+
+			result[invocation] = replacement;
+		}
+
+		return result;
+	}
+
+	private static ArgumentListSyntax BuildVerifySetArgs(
+		ExpressionSyntax valueExpression)
+	{
+		// Rewrite any Moq It.* matchers inside the value expression first.
+		ArgumentListSyntax wrapped = SyntaxFactory.ArgumentList(
+			SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(valueExpression)));
+		ArgumentListSyntax transformed = TransformMoqItReferences(wrapped);
+		ExpressionSyntax transformedValue = transformed.Arguments[0].Expression;
+
+		// If the transformed value is rooted in an It.* matcher invocation (including
+		// chained forms like It.IsInRange(...).Exclusive() or It.Matches(...).AsRegex()),
+		// use it directly instead of wrapping it in It.Is(...).
+		if (IsRootedInItInvocation(transformedValue))
+		{
+			return SyntaxFactory.ArgumentList(
+				SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(transformedValue)));
+		}
+
+		// Otherwise wrap the value in It.Is(...)
+		InvocationExpressionSyntax itIs = SyntaxFactory.InvocationExpression(
+			SyntaxFactory.MemberAccessExpression(
+				SyntaxKind.SimpleMemberAccessExpression,
+				SyntaxFactory.IdentifierName("It"),
+				SyntaxFactory.IdentifierName("Is")),
+			SyntaxFactory.ArgumentList(
+				SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(transformedValue))));
+		return SyntaxFactory.ArgumentList(
+			SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(itIs)));
+	}
+
 	private static InvocationExpressionSyntax? ApplyTimesChain(
 		InvocationExpressionSyntax baseInvocation, ExpressionSyntax timesArg)
 	{
@@ -1249,6 +1422,30 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		args.DescendantNodes().OfType<InvocationExpressionSyntax>()
 			.Where(inv => IsMoqItCall(inv, out _, out _)),
 		TransformMoqItInvocation);
+
+	// Returns true when the expression is an It.* matcher invocation, or a chained
+	// invocation whose receiver ultimately resolves to an It.* matcher invocation
+	// (e.g. It.IsInRange(...).Exclusive(), It.Is(...).Using(comparer), It.Matches(...).AsRegex()).
+	private static bool IsRootedInItInvocation(ExpressionSyntax expression)
+	{
+		ExpressionSyntax current = expression;
+		while (current is InvocationExpressionSyntax invocation)
+		{
+			if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
+			{
+				return false;
+			}
+
+			if (memberAccess.Expression is IdentifierNameSyntax { Identifier.Text: "It", })
+			{
+				return true;
+			}
+
+			current = memberAccess.Expression;
+		}
+
+		return false;
+	}
 
 	private static SyntaxNode TransformMoqItInvocation(InvocationExpressionSyntax original,
 		InvocationExpressionSyntax rewritten)
