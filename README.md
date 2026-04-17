@@ -24,8 +24,8 @@ not runtime code. Once Moq is gone from a project you can remove the reference a
 ## Usage
 
 After installing the package, every supported Moq construct (starting from `new Mock<T>()`) is reported
-as a warning with diagnostic id **`MockolateM001`** — *"Moq should be migrated."*. Apply the code fix
-*"Migrate Moq to Mockolate"* from your IDE (Visual Studio, Rider, VS Code with C# Dev Kit) or via
+as a warning with diagnostic id **`MockolateM001`** (*Moq should be migrated.*). Apply the code fix
+**Migrate Moq to Mockolate** from your IDE (Visual Studio, Rider, VS Code with C# Dev Kit) or via
 `dotnet format analyzers` to rewrite the call site.
 
 The fixer rewrites the whole mock — the `new Mock<T>()` construction, all `Setup…` calls on that mock,
@@ -33,23 +33,27 @@ the corresponding `Verify…` calls, event wiring, and trailing `.Object` access
 
 ## Supported migrations
 
-| Moq construct                                                            | Rewritten to                                                                |
-|--------------------------------------------------------------------------|-----------------------------------------------------------------------------|
-| `new Mock<IFoo>()`                                                       | `IFoo.CreateMock()`                                                         |
-| `new Mock<IFoo>(MockBehavior.Strict)`                                    | `IFoo.CreateMock(MockBehavior.Default.ThrowingWhenNotSetup())`              |
-| `mock.Object`                                                            | `mock` (the `.Object` access is dropped)                                    |
-| `mock.Setup(m => m.Method(args))`                                        | `mock.Mock.Setup.Method(args)`                                              |
-| `mock.Setup(m => m.Prop)` / `mock.SetupGet(...)`                         | `mock.Mock.Setup.Prop`                                                      |
-| `mock.SetupProperty(m => m.Prop)`                                        | `mock.Mock.Setup.Prop.Register()`                                           |
-| `mock.SetupProperty(m => m.Prop, value)`                                 | `mock.Mock.Setup.Prop.InitializeWith(value)`                                |
-| `mock.SetupSequence(...).Returns(a).Returns(b)`                          | `mock.Mock.Setup.Method(...).Returns(a).Returns(b)`                         |
-| `.Returns(...)` / `.ReturnsAsync(...)` / `.Throws(...)`                  | preserved on the Mockolate setup chain                                      |
-| `.Callback(...)`                                                         | `.Do(...)` on the Mockolate setup                                           |
-| `mock.InSequence(seq).Setup(...)` (and other setup forms)                | `.InSequence(...)` wrapper is stripped; use `Verify…Then(...)` for ordering |
-| `mock.Verify(m => m.Method(args), times)`                                | `mock.Mock.Verify.Method(args).<times>()`                                   |
-| `mock.VerifyGet` / `mock.VerifySet`                                      | `mock.Mock.Verify.Prop.Got(...)` / `.Set(...)`                              |
-| `mock.Raise(m => m.Event += null, args)`                                 | `mock.Mock.Raise.Event(args)`                                               |
-| `Mock.Verify(m => m.Event += ..., times)`                                | `mock.Mock.Verify.Event.Subscribed()` / `Unsubscribed()`                    |
-| `It.IsAny<T>()` / `It.Is(...)` / `It.IsInRange(...)` / `It.IsRegex(...)` | preserved or mapped to the Mockolate matcher equivalents                    |
-| `It.Ref<T>.IsAny` / `out` parameters                                     | `It.IsAnyRef<T>()` / `It.IsOut(() => value)`                                |
-| Nested mocks (`mock.Setup(m => m.Child.Prop)`)                           | Navigation chain is preserved: `mock.Child.Mock.Setup.Prop`                 |
+| Moq construct                                            | Rewritten to                                                                |
+|----------------------------------------------------------|-----------------------------------------------------------------------------|
+| `new Mock<IFoo>()`                                       | `IFoo.CreateMock()`                                                         |
+| `new Mock<IFoo>(MockBehavior.Strict)`                    | `IFoo.CreateMock(MockBehavior.Default.ThrowingWhenNotSetup())`              |
+| `sut.Object`                                             | `sut` (the `.Object` access is dropped)                                     |
+| `sut.Setup(m => m.Method(args))`                         | `sut.Mock.Setup.Method(args)`                                               |
+| `sut.Setup(m => m.Prop)` / `sut.SetupGet(...)`           | `sut.Mock.Setup.Prop`                                                       |
+| `sut.SetupProperty(m => m.Prop)`                         | `sut.Mock.Setup.Prop.Register()`                                            |
+| `sut.SetupProperty(m => m.Prop, value)`                  | `sut.Mock.Setup.Prop.InitializeWith(value)`                                 |
+| `sut.SetupSequence(...).Returns(a).Returns(b)`           | `sut.Mock.Setup.Method(...).Returns(a).Returns(b)`                          |
+| `.Returns(...)` / `.ReturnsAsync(...)` / `.Throws(...)`  | preserved on the Mockolate setup chain                                      |
+| `.Callback(...)`                                         | `.Do(...)` on the Mockolate setup                                           |
+| `sut.InSequence(seq).Setup(...)` (and other setup forms) | `.InSequence(...)` wrapper is stripped; use `Verify…Then(...)` for ordering |
+| `sut.Verify(m => m.Method(args), Times.Once())`          | `sut.Mock.Verify.Method(args).Once()`                                       |
+| `sut.VerifyGet` / `sut.VerifySet`                        | `sut.Mock.Verify.Prop.Got(...)` / `.Set(...)`                               |
+| `sut.Raise(m => m.Event += null, args)`                  | `sut.Mock.Raise.Event(sender, args)`                                        |
+| `sut.VerifyAdd(m => m.Event += ..., times)`              | `sut.Mock.Verify.Event.Subscribed().<times>()`                              |
+| `sut.VerifyRemove(m => m.Event -= ..., times)`           | `sut.Mock.Verify.Event.Unsubscribed().<times>()`                            |
+| `It.IsAny<T>()`                                          | preserved as `It.IsAny<T>()`                                                |
+| `It.Is<T>(predicate)`                                    | `It.Satisfies<T>(predicate)`                                                |
+| `It.IsInRange(lo, hi, Range.Inclusive)`                  | `It.IsInRange(lo, hi)` (the `Range` argument is dropped)                    |
+| `It.IsRegex(pattern, options)`                           | `It.Matches(pattern).AsRegex(options)`                                      |
+| `It.Ref<T>.IsAny` / `out` parameters                     | `It.IsAnyRef<T>()` / `It.IsOut(() => value)`                                |
+| Nested mocks (`sut.Setup(m => m.Child.Prop)`)            | Navigation chain is preserved: `sut.Child.Mock.Setup.Prop`                  |
