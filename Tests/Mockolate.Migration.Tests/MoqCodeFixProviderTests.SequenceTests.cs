@@ -80,6 +80,76 @@ public partial class MoqCodeFixProviderTests
 				""");
 
 		[Fact]
+		public async Task InSequence_OnSetupProperty_StripsInSequenceWrapper()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using Moq;
+
+				public interface IFoo { string Name { get; set; } }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sequence = new MockSequence();
+						var mock = [|new Mock<IFoo>()|];
+						mock.InSequence(sequence).SetupProperty(f => f.Name, "foo");
+					}
+				}
+				""",
+				"""
+				using Moq;
+				using Mockolate;
+
+				public interface IFoo { string Name { get; set; } }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sequence = new MockSequence();
+						var mock = IFoo.CreateMock();
+						mock.Mock.Setup.Name.InitializeWith("foo");
+					}
+				}
+				""");
+
+		[Fact]
+		public async Task InSequence_OnSetupSequence_StripsInSequenceWrapper()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using Moq;
+
+				public interface IFoo { int GetCount(); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sequence = new MockSequence();
+						var mock = [|new Mock<IFoo>()|];
+						mock.InSequence(sequence).SetupSequence(f => f.GetCount()).Returns(1).Returns(2);
+					}
+				}
+				""",
+				"""
+				using Moq;
+				using Mockolate;
+
+				public interface IFoo { int GetCount(); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sequence = new MockSequence();
+						var mock = IFoo.CreateMock();
+						mock.Mock.Setup.GetCount().Returns(1).Returns(2);
+					}
+				}
+				""");
+
+		[Fact]
 		public async Task InSequence_OnSetupWithReturnsAsync_StripsInSequenceWrapper()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""

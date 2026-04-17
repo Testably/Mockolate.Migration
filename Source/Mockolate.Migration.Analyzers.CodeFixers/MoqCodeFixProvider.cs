@@ -693,8 +693,9 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 				continue;
 			}
 
-			SymbolInfo symbolInfo = semanticModel.GetSymbolInfo(memberAccess.Expression, cancellationToken);
-			if (!SymbolEqualityComparer.Default.Equals(symbolInfo.Symbol, mockSymbol))
+			ExpressionSyntax? mockReceiver = TryResolveMockReceiver(
+				memberAccess.Expression, semanticModel, mockSymbol, cancellationToken);
+			if (mockReceiver is null)
 			{
 				continue;
 			}
@@ -730,7 +731,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 			{
 				MemberAccessExpressionSyntax mockAccess = SyntaxFactory.MemberAccessExpression(
 					SyntaxKind.SimpleMemberAccessExpression,
-					memberAccess.Expression,
+					mockReceiver,
 					SyntaxFactory.IdentifierName("Mock"));
 				MemberAccessExpressionSyntax setupAccess = SyntaxFactory.MemberAccessExpression(
 					SyntaxKind.SimpleMemberAccessExpression,
@@ -743,7 +744,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 			}
 			else
 			{
-				ExpressionSyntax navChain = memberAccess.Expression;
+				ExpressionSyntax navChain = mockReceiver;
 				foreach (SimpleNameSyntax nav in navigationChain)
 				{
 					navChain = SyntaxFactory.MemberAccessExpression(
