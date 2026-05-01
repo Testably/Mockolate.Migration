@@ -629,8 +629,8 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 			// Set pattern: `sub.Received().Prop = value`
 			if (TryExtractReceivedPropertyAccess(assignment.Left, semanticModel, mockSymbol, cancellationToken) is { } set)
 			{
-				ArgumentListSyntax setArgs = SyntaxFactory.ArgumentList(
-					SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(assignment.Right.WithoutTrivia())));
+				ArgumentListSyntax setArgs = BuildPropertyVerifySetArgs(
+					assignment.Right, semanticModel, cancellationToken);
 
 				result[assignment] = BuildPropertyVerifyChain(set.MockReceiver, set.PropertyName, "Set",
 						setArgs, set.ReceivedMethod, set.ReceivedArgs)
@@ -690,6 +690,63 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 
 		bool isNegative = receivedMethod == "DidNotReceive";
 		return BuildVerifySuffix(accessorCall, isNegative, receivedArgs ?? SyntaxFactory.ArgumentList());
+	}
+
+	/// <summary>
+	///     Builds the argument list for a property setter <c>Verify.Prop.Set(...)</c> call. Translates any
+	///     NSubstitute <c>Arg.*</c> matchers in the value to their <c>It.*</c> equivalents; non-matcher values are
+	///     wrapped in <c>It.Is(...)</c> for an explicit equality match.
+	/// </summary>
+	private static ArgumentListSyntax BuildPropertyVerifySetArgs(ExpressionSyntax valueExpression,
+		SemanticModel semanticModel, CancellationToken cancellationToken)
+	{
+		// Resolve Arg.* invocations against the original (still-attached) tree so the semantic model
+		// can answer GetSymbolInfo, then rewrite them in a detached copy.
+		InvocationExpressionSyntax[] argInvocations = valueExpression.DescendantNodesAndSelf()
+			.OfType<InvocationExpressionSyntax>()
+			.Where(invocation => IsNSubstituteArgCall(invocation, semanticModel, cancellationToken))
+			.ToArray();
+
+		ExpressionSyntax transformedValue = argInvocations.Length == 0
+			? valueExpression.WithoutTrivia()
+			: valueExpression.ReplaceNodes(argInvocations, TransformNSubstituteArgInvocation).WithoutTrivia();
+
+		if (IsRootedInItInvocation(transformedValue))
+		{
+			return SyntaxFactory.ArgumentList(
+				SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(transformedValue)));
+		}
+
+		InvocationExpressionSyntax itIs = SyntaxFactory.InvocationExpression(
+			SyntaxFactory.MemberAccessExpression(
+				SyntaxKind.SimpleMemberAccessExpression,
+				SyntaxFactory.IdentifierName("It"),
+				SyntaxFactory.IdentifierName("Is")),
+			SyntaxFactory.ArgumentList(
+				SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(transformedValue))));
+		return SyntaxFactory.ArgumentList(
+			SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(itIs)));
+	}
+
+	private static bool IsRootedInItInvocation(ExpressionSyntax expression)
+	{
+		ExpressionSyntax current = expression;
+		while (current is InvocationExpressionSyntax invocation)
+		{
+			if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
+			{
+				return false;
+			}
+
+			if (memberAccess.Expression is IdentifierNameSyntax { Identifier.Text: "It", })
+			{
+				return true;
+			}
+
+			current = memberAccess.Expression;
+		}
+
+		return false;
 	}
 
 	private static Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> FindAndBuildVerifyReplacements(

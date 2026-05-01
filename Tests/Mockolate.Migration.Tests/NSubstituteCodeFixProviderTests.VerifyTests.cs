@@ -70,7 +70,41 @@ public partial class NSubstituteCodeFixProviderTests
 					public void Test()
 					{
 						var sub = IFoo.CreateMock();
-						sub.Mock.Verify.Name.Set("x").Never();
+						sub.Mock.Verify.Name.Set(It.Is("x")).Never();
+					}
+				}
+				""");
+
+		[Fact]
+		public async Task DidNotReceivePropertySetWithArgAny_TranslatesMatcherWithoutWrapping()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using NSubstitute;
+
+				public interface IFoo { string Name { get; set; } }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = [|Substitute.For<IFoo>()|];
+						sub.DidNotReceive().Name = Arg.Any<string>();
+					}
+				}
+				""",
+				"""
+				using NSubstitute;
+				using Mockolate;
+				using Mockolate.Verify;
+
+				public interface IFoo { string Name { get; set; } }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = IFoo.CreateMock();
+						sub.Mock.Verify.Name.Set(It.IsAny<string>()).Never();
 					}
 				}
 				""");
@@ -276,7 +310,7 @@ public partial class NSubstituteCodeFixProviderTests
 					public void Test()
 					{
 						var sub = IFoo.CreateMock();
-						sub.Mock.Verify.Name.Set("x").AtLeastOnce();
+						sub.Mock.Verify.Name.Set(It.Is("x")).AtLeastOnce();
 					}
 				}
 				""");
