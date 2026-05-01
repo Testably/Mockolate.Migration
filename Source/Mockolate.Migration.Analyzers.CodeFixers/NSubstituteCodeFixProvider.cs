@@ -269,7 +269,7 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 					.WithTriviaFrom(targetInvocation);
 
 				bool isNested = targetMemberAccess.Expression is MemberAccessExpressionSyntax;
-				TryBuildSequentialOuter(outerInvocation, configuratorMethod, setupInvocation,
+				BuildSequentialOuterIfNeeded(outerInvocation, configuratorMethod, setupInvocation,
 					out InvocationExpressionSyntax? sequentialReplacement);
 				InvocationExpressionSyntax? outerReplacement = sequentialReplacement
 				                                               ?? (isNested
@@ -305,7 +305,7 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 					targetPropertyAccess.Expression, targetPropertyAccess.Name);
 
 				bool isNestedProperty = targetPropertyAccess.Expression is MemberAccessExpressionSyntax;
-				TryBuildSequentialOuter(outerInvocation, configuratorMethod, setupAccess,
+				BuildSequentialOuterIfNeeded(outerInvocation, configuratorMethod, setupAccess,
 					out InvocationExpressionSyntax? sequentialPropertyReplacement);
 				InvocationExpressionSyntax? outerPropertyReplacement = sequentialPropertyReplacement
 				                                                       ?? (isNestedProperty
@@ -369,7 +369,7 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 	}
 
 	/// <summary>
-	///     Tries to build an outer-level replacement for the configurator chain. Two cases trigger this:
+	///     Builds an outer-level replacement for the configurator chain. Two cases trigger this:
 	///     <list type="bullet">
 	///         <item>Multi-arg <c>Returns</c>/<c>Throws</c> — split into a chain of single-arg calls.</item>
 	///         <item>
@@ -378,10 +378,10 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 	///             multi-arg).
 	///         </item>
 	///     </list>
-	///     Returns <see langword="false" /> when the original single-arg <c>Returns</c>/<c>Throws</c>/etc. shape can
-	///     be preserved by the inner-only rewrite.
+	///     Leaves <paramref name="replacement" /> as <see langword="null" /> when the original single-arg
+	///     <c>Returns</c>/<c>Throws</c>/etc. shape can be preserved by the inner-only rewrite.
 	/// </summary>
-	private static void TryBuildSequentialOuter(InvocationExpressionSyntax outerInvocation,
+	private static void BuildSequentialOuterIfNeeded(InvocationExpressionSyntax outerInvocation,
 		string configuratorMethod, ExpressionSyntax setupReceiver,
 		out InvocationExpressionSyntax? replacement)
 	{
