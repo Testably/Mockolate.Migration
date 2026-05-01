@@ -41,5 +41,40 @@ public partial class NSubstituteCodeFixProviderTests
 					}
 				}
 				""");
+
+		[Fact]
+		public async Task UserDefinedClearReceivedCalls_IsNotRewritten()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using NSubstitute;
+
+				public interface IFoo { void Bar(int x); void ClearReceivedCalls(); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = [|Substitute.For<IFoo>()|];
+						sub.Bar(1);
+						sub.ClearReceivedCalls();
+					}
+				}
+				""",
+				"""
+				using NSubstitute;
+				using Mockolate;
+
+				public interface IFoo { void Bar(int x); void ClearReceivedCalls(); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = IFoo.CreateMock();
+						sub.Bar(1);
+						sub.ClearReceivedCalls();
+					}
+				}
+				""");
 	}
 }

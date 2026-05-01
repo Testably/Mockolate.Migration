@@ -266,6 +266,23 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 				continue;
 			}
 
+			if (invocation.ArgumentList.Arguments.Count != 0)
+			{
+				continue;
+			}
+
+			if (semanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol is not IMethodSymbol methodSymbol)
+			{
+				continue;
+			}
+
+			IMethodSymbol originalMethod = methodSymbol.ReducedFrom ?? methodSymbol;
+			if (originalMethod.ContainingType?.Name != "SubstituteExtensions" ||
+			    originalMethod.ContainingType.ContainingNamespace?.ToDisplayString() != "NSubstitute")
+			{
+				continue;
+			}
+
 			if (!IsTrackedMockReceiver(memberAccess.Expression, semanticModel, mockSymbol, cancellationToken))
 			{
 				continue;
