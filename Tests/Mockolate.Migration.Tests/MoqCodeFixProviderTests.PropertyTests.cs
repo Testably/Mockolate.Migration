@@ -109,7 +109,7 @@ public partial class MoqCodeFixProviderTests
 				""");
 
 		[Fact]
-		public async Task VerifySet_WithLiteral_WrapsInItIs()
+		public async Task VerifySet_WithLiteral_PassesValueDirectly()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
 				using Moq;
@@ -137,7 +137,7 @@ public partial class MoqCodeFixProviderTests
 					public void Test()
 					{
 						var mock = IFoo.CreateMock();
-						mock.Mock.Verify.Name.Set(It.Is("foo")).AtLeastOnce();
+						mock.Mock.Verify.Name.Set("foo").AtLeastOnce();
 					}
 				}
 				""");
@@ -171,7 +171,7 @@ public partial class MoqCodeFixProviderTests
 					public void Test()
 					{
 						var mock = IFoo.CreateMock();
-						mock.Mock.Verify.Name.Set(It.Is("foo")).Never();
+						mock.Mock.Verify.Name.Set("foo").Never();
 					}
 				}
 				""");

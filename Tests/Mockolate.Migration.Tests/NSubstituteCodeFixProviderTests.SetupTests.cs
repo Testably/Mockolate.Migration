@@ -107,6 +107,39 @@ public partial class NSubstituteCodeFixProviderTests
 				""");
 
 		[Fact]
+		public async Task ArgIsTypedValue_OnFourParameterMethod_PreservesItIs()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using NSubstitute;
+
+				public interface IFoo { int Bar(int a, int b, int c, int d); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = [|Substitute.For<IFoo>()|];
+						sub.Bar(Arg.Is<int>(1), Arg.Any<int>(), Arg.Is(3), Arg.Is<int>(4)).Returns(42);
+					}
+				}
+				""",
+				"""
+				using NSubstitute;
+				using Mockolate;
+
+				public interface IFoo { int Bar(int a, int b, int c, int d); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = IFoo.CreateMock();
+						sub.Mock.Setup.Bar(It.Is<int>(1), It.IsAny<int>(), It.Is(3), It.Is<int>(4)).Returns(42);
+					}
+				}
+				""");
+
+		[Fact]
 		public async Task ArgIsValue_IsRewrittenToItIs()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -135,6 +168,138 @@ public partial class NSubstituteCodeFixProviderTests
 					{
 						var sub = IFoo.CreateMock();
 						sub.Mock.Setup.Bar(It.Is(5)).Returns(42);
+					}
+				}
+				""");
+
+		[Fact]
+		public async Task ArgIsValue_OnMethodWithMoreThanFourParameters_KeepsItIs()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using NSubstitute;
+
+				public interface IFoo { int Bar(int a, int b, int c, int d, int e); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = [|Substitute.For<IFoo>()|];
+						sub.Bar(Arg.Is(1), Arg.Is(2), Arg.Is(3), Arg.Is(4), Arg.Is(5)).Returns(42);
+					}
+				}
+				""",
+				"""
+				using NSubstitute;
+				using Mockolate;
+
+				public interface IFoo { int Bar(int a, int b, int c, int d, int e); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = IFoo.CreateMock();
+						sub.Mock.Setup.Bar(It.Is(1), It.Is(2), It.Is(3), It.Is(4), It.Is(5)).Returns(42);
+					}
+				}
+				""");
+
+		[Fact]
+		public async Task Method_WithLiteralOnFourParameterMethod_KeepsLiteralsDirect()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using NSubstitute;
+
+				public interface IFoo { int Bar(int a, int b, int c, int d); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = [|Substitute.For<IFoo>()|];
+						sub.Bar(1, 2, 3, 4).Returns(42);
+					}
+				}
+				""",
+				"""
+				using NSubstitute;
+				using Mockolate;
+
+				public interface IFoo { int Bar(int a, int b, int c, int d); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = IFoo.CreateMock();
+						sub.Mock.Setup.Bar(1, 2, 3, 4).Returns(42);
+					}
+				}
+				""");
+
+		[Fact]
+		public async Task Method_WithLiteralsOnFiveParameterMethod_WrapsLiteralsInItIs()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using NSubstitute;
+
+				public interface IFoo { int Bar(int a, int b, int c, int d, int e); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = [|Substitute.For<IFoo>()|];
+						sub.Bar(1, 2, 3, 4, 5).Returns(42);
+					}
+				}
+				""",
+				"""
+				using NSubstitute;
+				using Mockolate;
+
+				public interface IFoo { int Bar(int a, int b, int c, int d, int e); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = IFoo.CreateMock();
+						sub.Mock.Setup.Bar(It.Is(1), It.Is(2), It.Is(3), It.Is(4), It.Is(5)).Returns(42);
+					}
+				}
+				""");
+
+		[Fact]
+		public async Task Method_WithMixedArgsOnFiveParameterMethod_WrapsOnlyPlainValues()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using NSubstitute;
+
+				public interface IFoo { int Bar(int a, int b, int c, int d, int e); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = [|Substitute.For<IFoo>()|];
+						sub.Bar(Arg.Any<int>(), 2, Arg.Is<int>(x => x > 0), 4, 5).Returns(42);
+					}
+				}
+				""",
+				"""
+				using NSubstitute;
+				using Mockolate;
+
+				public interface IFoo { int Bar(int a, int b, int c, int d, int e); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = IFoo.CreateMock();
+						sub.Mock.Setup.Bar(It.IsAny<int>(), It.Is(2), It.Satisfies<int>(x => x > 0), It.Is(4), It.Is(5)).Returns(42);
 					}
 				}
 				""");

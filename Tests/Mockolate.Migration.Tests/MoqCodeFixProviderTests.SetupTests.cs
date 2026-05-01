@@ -43,6 +43,72 @@ public partial class MoqCodeFixProviderTests
 				""");
 
 		[Fact]
+		public async Task Method_WithExplicitItIsOnFiveParameterMethod_WrapsPlainValuesAndPreservesItIs()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using Moq;
+
+				public interface IFoo { bool Bar(int a, int b, int c, int d, int e); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = [|new Mock<IFoo>()|];
+						mock.Setup(m => m.Bar(It.Is<int>(1), It.IsAny<int>(), 3, It.Is<int>(4), It.Is<int>(5))).Returns(true);
+					}
+				}
+				""",
+				"""
+				using Moq;
+				using Mockolate;
+
+				public interface IFoo { bool Bar(int a, int b, int c, int d, int e); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = IFoo.CreateMock();
+						mock.Mock.Setup.Bar(It.Is<int>(1), It.IsAny<int>(), It.Is(3), It.Is<int>(4), It.Is<int>(5)).Returns(true);
+					}
+				}
+				""");
+
+		[Fact]
+		public async Task Method_WithExplicitItIsOnFourParameterMethod_PreservesItIs()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using Moq;
+
+				public interface IFoo { bool Bar(int a, int b, int c, int d); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = [|new Mock<IFoo>()|];
+						mock.Setup(m => m.Bar(It.Is<int>(1), It.IsAny<int>(), It.Is<int>(3), It.Is<int>(4))).Returns(true);
+					}
+				}
+				""",
+				"""
+				using Moq;
+				using Mockolate;
+
+				public interface IFoo { bool Bar(int a, int b, int c, int d); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = IFoo.CreateMock();
+						mock.Mock.Setup.Bar(It.Is<int>(1), It.IsAny<int>(), It.Is<int>(3), It.Is<int>(4)).Returns(true);
+					}
+				}
+				""");
+
+		[Fact]
 		public async Task Method_WithItIsIn_MigratedToIsOneOf()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -244,6 +310,72 @@ public partial class MoqCodeFixProviderTests
 					{
 						var mock = IFoo.CreateMock();
 						mock.Mock.Setup.Bar(It.Is<string>("hello").Using(StringComparer.OrdinalIgnoreCase)).Returns(true);
+					}
+				}
+				""");
+
+		[Fact]
+		public async Task Method_WithLiteralOnFourParameterMethod_KeepsLiteralsDirect()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using Moq;
+
+				public interface IFoo { bool Bar(int a, int b, int c, int d); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = [|new Mock<IFoo>()|];
+						mock.Setup(m => m.Bar(1, 2, 3, 4)).Returns(true);
+					}
+				}
+				""",
+				"""
+				using Moq;
+				using Mockolate;
+
+				public interface IFoo { bool Bar(int a, int b, int c, int d); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = IFoo.CreateMock();
+						mock.Mock.Setup.Bar(1, 2, 3, 4).Returns(true);
+					}
+				}
+				""");
+
+		[Fact]
+		public async Task Method_WithLiteralsOnFiveParameterMethod_WrapsLiteralsInItIs()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using Moq;
+
+				public interface IFoo { bool Bar(int a, int b, int c, int d, int e); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = [|new Mock<IFoo>()|];
+						mock.Setup(m => m.Bar(1, 2, 3, 4, 5)).Returns(true);
+					}
+				}
+				""",
+				"""
+				using Moq;
+				using Mockolate;
+
+				public interface IFoo { bool Bar(int a, int b, int c, int d, int e); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = IFoo.CreateMock();
+						mock.Mock.Setup.Bar(It.Is(1), It.Is(2), It.Is(3), It.Is(4), It.Is(5)).Returns(true);
 					}
 				}
 				""");

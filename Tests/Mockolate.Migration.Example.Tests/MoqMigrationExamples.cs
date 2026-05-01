@@ -84,7 +84,7 @@ public class MoqMigrationExamples
 		_ = mock.Name;
 		mock.Name = "baz";
 		mock.Mock.Verify.Name.Got().AtLeastOnce();
-		mock.Mock.Verify.Name.Set(It.Is("baz")).Once();
+		mock.Mock.Verify.Name.Set("baz").Once();
 
 		/* ------ Events ------ */
 		// subscribing to and raising an event
@@ -239,9 +239,9 @@ public class MoqMigrationExamples
 		_ = dispenser.Dispense("Milk", 2);
 		_ = dispenser.Dispense("White", 3);
 
-		dispenser.Mock.Verify.Dispense(It.Is("Dark"), It.Is(1)).Then(
-			m => m.Dispense(It.Is("Milk"), It.Is(2)),
-			m => m.Dispense(It.Is("White"), It.Is(3)));
+		dispenser.Mock.Verify.Dispense("Dark", 1).Then(
+			m => m.Dispense("Milk", 2),
+			m => m.Dispense("White", 3));
 
 		await That(true).IsTrue();
 	}
