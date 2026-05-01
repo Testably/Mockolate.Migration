@@ -260,8 +260,10 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 					continue;
 				}
 
-				ArgumentListSyntax transformedArgs =
-					TransformNSubstituteArgReferences(targetInvocation.ArgumentList, semanticModel, cancellationToken);
+				int? methodParameterCount = GetMethodParameterCount(targetInvocation, semanticModel, cancellationToken);
+				ArgumentListSyntax transformedArgs = WrapPlainValuesForLargeArities(
+					TransformNSubstituteArgReferences(targetInvocation.ArgumentList, semanticModel, cancellationToken),
+					methodParameterCount);
 
 				MemberAccessExpressionSyntax setupAccess = BuildSetupAccess(
 					targetMemberAccess.Expression, targetMemberAccess.Name);
@@ -590,7 +592,10 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 				continue;
 			}
 
-			ArgumentListSyntax transformedArgs = TransformNSubstituteArgReferences(lambdaBody.ArgumentList, semanticModel, cancellationToken);
+			int? methodParameterCount = GetMethodParameterCount(lambdaBody, semanticModel, cancellationToken);
+			ArgumentListSyntax transformedArgs = WrapPlainValuesForLargeArities(
+				TransformNSubstituteArgReferences(lambdaBody.ArgumentList, semanticModel, cancellationToken),
+				methodParameterCount);
 			MemberAccessExpressionSyntax setupAccess = BuildSetupAccess(whenAccess.Expression, lambdaMemberAccess.Name.WithoutTrivia());
 			InvocationExpressionSyntax setupCall = SyntaxFactory.InvocationExpression(setupAccess, transformedArgs);
 
@@ -898,8 +903,9 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 
 	/// <summary>
 	///     Builds the argument list for a property setter <c>Verify.Prop.Set(...)</c> call. Translates any
-	///     NSubstitute <c>Arg.*</c> matchers in the value to their <c>It.*</c> equivalents; non-matcher values are
-	///     wrapped in <c>It.Is(...)</c> for an explicit equality match.
+	///     NSubstitute <c>Arg.*</c> matchers in the value to their <c>It.*</c> equivalents and passes the value
+	///     through directly — Mockolate's <c>Set(...)</c> takes one parameter and accepts a bare value alongside
+	///     the matcher overload, so wrapping a literal in <c>It.Is(...)</c> would just be noise.
 	/// </summary>
 	private static ArgumentListSyntax BuildPropertyVerifySetArgs(ExpressionSyntax valueExpression,
 		SemanticModel semanticModel, CancellationToken cancellationToken)
@@ -915,42 +921,8 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 			? valueExpression.WithoutTrivia()
 			: valueExpression.ReplaceNodes(argInvocations, TransformNSubstituteArgInvocation).WithoutTrivia();
 
-		if (IsRootedInItInvocation(transformedValue))
-		{
-			return SyntaxFactory.ArgumentList(
-				SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(transformedValue)));
-		}
-
-		InvocationExpressionSyntax itIs = SyntaxFactory.InvocationExpression(
-			SyntaxFactory.MemberAccessExpression(
-				SyntaxKind.SimpleMemberAccessExpression,
-				SyntaxFactory.IdentifierName("It"),
-				SyntaxFactory.IdentifierName("Is")),
-			SyntaxFactory.ArgumentList(
-				SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(transformedValue))));
 		return SyntaxFactory.ArgumentList(
-			SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(itIs)));
-	}
-
-	private static bool IsRootedInItInvocation(ExpressionSyntax expression)
-	{
-		ExpressionSyntax current = expression;
-		while (current is InvocationExpressionSyntax invocation)
-		{
-			if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
-			{
-				return false;
-			}
-
-			if (memberAccess.Expression is IdentifierNameSyntax { Identifier.Text: "It", })
-			{
-				return true;
-			}
-
-			current = memberAccess.Expression;
-		}
-
-		return false;
+			SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(transformedValue)));
 	}
 
 	private static Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> FindAndBuildVerifyReplacements(
@@ -993,8 +965,10 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 			}
 
 			ExpressionSyntax mockReceiver = receiverAccess.Expression;
-			ArgumentListSyntax transformedArgs =
-				TransformNSubstituteArgReferences(outerInvocation.ArgumentList, semanticModel, cancellationToken);
+			int? methodParameterCount = GetMethodParameterCount(outerInvocation, semanticModel, cancellationToken);
+			ArgumentListSyntax transformedArgs = WrapPlainValuesForLargeArities(
+				TransformNSubstituteArgReferences(outerInvocation.ArgumentList, semanticModel, cancellationToken),
+				methodParameterCount);
 			SimpleNameSyntax methodNameSyntax = outerAccess.Name;
 
 			MemberAccessExpressionSyntax verifyAccess = BuildVerifyAccess(mockReceiver, methodNameSyntax);
@@ -1125,6 +1099,96 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 				.Where(invocation => IsNSubstituteArgCall(invocation, semanticModel, cancellationToken))
 				.ToArray(),
 			TransformNSubstituteArgInvocation);
+
+	/// <summary>
+	///     Mockolate exposes a direct-value overload alongside the matcher overload for any method with up to four
+	///     parameters; methods with five or more parameters only expose the matcher overload. When the receiver
+	///     method is in the latter group, plain values are wrapped in <c>It.Is(...)</c> so the migrated call still
+	///     binds. Existing <c>It.*</c> matchers, predicate lambdas, and ref/out wrappers are preserved untouched.
+	/// </summary>
+	private static ArgumentListSyntax WrapPlainValuesForLargeArities(ArgumentListSyntax args, int? parameterCount)
+	{
+		if (parameterCount is null or <= 4)
+		{
+			return args;
+		}
+
+		bool changed = false;
+		ArgumentSyntax[] rewritten = new ArgumentSyntax[args.Arguments.Count];
+		for (int i = 0; i < args.Arguments.Count; i++)
+		{
+			ArgumentSyntax arg = args.Arguments[i];
+			if (TryWrapAsItIs(arg, out ArgumentSyntax wrapped))
+			{
+				rewritten[i] = wrapped;
+				changed = true;
+			}
+			else
+			{
+				rewritten[i] = arg;
+			}
+		}
+
+		return changed ? args.WithArguments(SyntaxFactory.SeparatedList(rewritten)) : args;
+	}
+
+	private static bool TryWrapAsItIs(ArgumentSyntax arg, out ArgumentSyntax wrapped)
+	{
+		if (!arg.RefKindKeyword.IsKind(SyntaxKind.None))
+		{
+			wrapped = arg;
+			return false;
+		}
+
+		if (IsRootedInItInvocation(arg.Expression))
+		{
+			wrapped = arg;
+			return false;
+		}
+
+		InvocationExpressionSyntax itIs = SyntaxFactory.InvocationExpression(
+			SyntaxFactory.MemberAccessExpression(
+				SyntaxKind.SimpleMemberAccessExpression,
+				SyntaxFactory.IdentifierName("It"),
+				SyntaxFactory.IdentifierName("Is")),
+			SyntaxFactory.ArgumentList(
+				SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(arg.Expression))));
+		wrapped = arg.WithExpression(itIs);
+		return true;
+	}
+
+	private static bool IsRootedInItInvocation(ExpressionSyntax expression)
+	{
+		ExpressionSyntax current = expression;
+		while (current is InvocationExpressionSyntax invocation)
+		{
+			if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
+			{
+				return false;
+			}
+
+			if (memberAccess.Expression is IdentifierNameSyntax { Identifier.Text: "It", })
+			{
+				return true;
+			}
+
+			current = memberAccess.Expression;
+		}
+
+		return false;
+	}
+
+	private static int? GetMethodParameterCount(ExpressionSyntax invocationOrMemberAccess,
+		SemanticModel? semanticModel, CancellationToken cancellationToken)
+	{
+		if (semanticModel is null)
+		{
+			return null;
+		}
+
+		ISymbol? symbol = semanticModel.GetSymbolInfo(invocationOrMemberAccess, cancellationToken).Symbol;
+		return symbol is IMethodSymbol methodSymbol ? methodSymbol.Parameters.Length : null;
+	}
 
 	private static bool IsNSubstituteArgCall(InvocationExpressionSyntax invocation,
 		SemanticModel semanticModel, CancellationToken cancellationToken)

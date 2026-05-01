@@ -477,8 +477,11 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 			}
 
 			SimpleNameSyntax methodNameSyntax = lambdaMemberAccess.Name;
-			ArgumentListSyntax transformedArgs = TransformMoqItReferences(
-				TransformRefAndOutArguments(lambdaBody.ArgumentList, semanticModel, cancellationToken));
+			int? methodParameterCount = GetMethodParameterCount(lambdaBody, semanticModel, cancellationToken);
+			ArgumentListSyntax transformedArgs = WrapPlainValuesForLargeArities(
+				TransformMoqItReferences(
+					TransformRefAndOutArguments(lambdaBody.ArgumentList, semanticModel, cancellationToken)),
+				methodParameterCount);
 
 			InvocationExpressionSyntax replacement;
 			if (navigationChain.Count == 0)
@@ -945,8 +948,11 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 			}
 
 			SimpleNameSyntax methodNameSyntax = lambdaMemberAccess.Name;
-			ArgumentListSyntax transformedArgs = TransformMoqItReferences(
-				TransformRefAndOutArguments(lambdaBody.ArgumentList, semanticModel, cancellationToken));
+			int? methodParameterCount = GetMethodParameterCount(lambdaBody, semanticModel, cancellationToken);
+			ArgumentListSyntax transformedArgs = WrapPlainValuesForLargeArities(
+				TransformMoqItReferences(
+					TransformRefAndOutArguments(lambdaBody.ArgumentList, semanticModel, cancellationToken)),
+				methodParameterCount);
 
 			InvocationExpressionSyntax baseInvocation;
 			if (navigationChain.Count == 0)
@@ -1282,31 +1288,15 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 	private static ArgumentListSyntax BuildVerifySetArgs(
 		ExpressionSyntax valueExpression)
 	{
-		// Rewrite any Moq It.* matchers inside the value expression first.
+		// Rewrite any Moq It.* matchers inside the value expression first, then pass the
+		// (possibly rewritten) value straight through. Mockolate's Set(...) accepts a direct
+		// value alongside the matcher overload, so wrapping a plain literal in It.Is(...) is
+		// just noise.
 		ArgumentListSyntax wrapped = SyntaxFactory.ArgumentList(
 			SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(valueExpression)));
 		ArgumentListSyntax transformed = TransformMoqItReferences(wrapped);
-		ExpressionSyntax transformedValue = transformed.Arguments[0].Expression;
-
-		// If the transformed value is rooted in an It.* matcher invocation (including
-		// chained forms like It.IsInRange(...).Exclusive() or It.Matches(...).AsRegex()),
-		// use it directly instead of wrapping it in It.Is(...).
-		if (IsRootedInItInvocation(transformedValue))
-		{
-			return SyntaxFactory.ArgumentList(
-				SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(transformedValue)));
-		}
-
-		// Otherwise wrap the value in It.Is(...)
-		InvocationExpressionSyntax itIs = SyntaxFactory.InvocationExpression(
-			SyntaxFactory.MemberAccessExpression(
-				SyntaxKind.SimpleMemberAccessExpression,
-				SyntaxFactory.IdentifierName("It"),
-				SyntaxFactory.IdentifierName("Is")),
-			SyntaxFactory.ArgumentList(
-				SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(transformedValue))));
 		return SyntaxFactory.ArgumentList(
-			SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(itIs)));
+			SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(transformed.Arguments[0].Expression)));
 	}
 
 	private static InvocationExpressionSyntax? ApplyTimesChain(
@@ -1459,9 +1449,65 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 			.Where(inv => IsMoqItCall(inv, out _, out _)),
 		TransformMoqItInvocation);
 
-	// Returns true when the expression is an It.* matcher invocation, or a chained
-	// invocation whose receiver ultimately resolves to an It.* matcher invocation
-	// (e.g. It.IsInRange(...).Exclusive(), It.Is(...).Using(comparer), It.Matches(...).AsRegex()).
+	/// <summary>
+	///     Mockolate exposes a direct-value overload alongside the matcher overload for any method with up to four
+	///     parameters; methods with five or more parameters only expose the matcher overload. When the receiver
+	///     method is in the latter group, plain values are wrapped in <c>It.Is(...)</c> so the migrated call still
+	///     binds. Existing <c>It.*</c> matchers, predicate lambdas, and ref/out wrappers are preserved untouched.
+	/// </summary>
+	private static ArgumentListSyntax WrapPlainValuesForLargeArities(ArgumentListSyntax args, int? parameterCount)
+	{
+		if (parameterCount is null or <= 4)
+		{
+			return args;
+		}
+
+		bool changed = false;
+		ArgumentSyntax[] rewritten = new ArgumentSyntax[args.Arguments.Count];
+		for (int i = 0; i < args.Arguments.Count; i++)
+		{
+			ArgumentSyntax arg = args.Arguments[i];
+			if (TryWrapAsItIs(arg, out ArgumentSyntax wrapped))
+			{
+				rewritten[i] = wrapped;
+				changed = true;
+			}
+			else
+			{
+				rewritten[i] = arg;
+			}
+		}
+
+		return changed ? args.WithArguments(SyntaxFactory.SeparatedList(rewritten)) : args;
+	}
+
+	private static bool TryWrapAsItIs(ArgumentSyntax arg, out ArgumentSyntax wrapped)
+	{
+		// ref/out arguments already carry their own It.IsRef/It.IsOut wrapper from TransformRefAndOutArguments.
+		if (!arg.RefKindKeyword.IsKind(SyntaxKind.None))
+		{
+			wrapped = arg;
+			return false;
+		}
+
+		// Skip arguments that already resolve to an It.* matcher (or a chained call on one).
+		if (IsRootedInItInvocation(arg.Expression))
+		{
+			wrapped = arg;
+			return false;
+		}
+
+		InvocationExpressionSyntax itIs = SyntaxFactory.InvocationExpression(
+			SyntaxFactory.MemberAccessExpression(
+				SyntaxKind.SimpleMemberAccessExpression,
+				SyntaxFactory.IdentifierName("It"),
+				SyntaxFactory.IdentifierName("Is")),
+			SyntaxFactory.ArgumentList(
+				SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(arg.Expression))));
+		wrapped = arg.WithExpression(itIs);
+		return true;
+	}
+
 	private static bool IsRootedInItInvocation(ExpressionSyntax expression)
 	{
 		ExpressionSyntax current = expression;
@@ -1481,6 +1527,18 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		}
 
 		return false;
+	}
+
+	private static int? GetMethodParameterCount(ExpressionSyntax invocationOrMemberAccess,
+		SemanticModel? semanticModel, CancellationToken cancellationToken)
+	{
+		if (semanticModel is null)
+		{
+			return null;
+		}
+
+		ISymbol? symbol = semanticModel.GetSymbolInfo(invocationOrMemberAccess, cancellationToken).Symbol;
+		return symbol is IMethodSymbol methodSymbol ? methodSymbol.Parameters.Length : null;
 	}
 
 	private static SyntaxNode TransformMoqItInvocation(InvocationExpressionSyntax original,

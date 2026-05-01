@@ -70,7 +70,7 @@ public partial class NSubstituteCodeFixProviderTests
 					public void Test()
 					{
 						var sub = IFoo.CreateMock();
-						sub.Mock.Verify.Name.Set(It.Is("x")).Never();
+						sub.Mock.Verify.Name.Set("x").Never();
 					}
 				}
 				""");
@@ -310,7 +310,7 @@ public partial class NSubstituteCodeFixProviderTests
 					public void Test()
 					{
 						var sub = IFoo.CreateMock();
-						sub.Mock.Verify.Name.Set(It.Is("x")).AtLeastOnce();
+						sub.Mock.Verify.Name.Set("x").AtLeastOnce();
 					}
 				}
 				""");
