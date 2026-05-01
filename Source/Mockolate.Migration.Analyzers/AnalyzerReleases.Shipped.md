@@ -2,6 +2,7 @@
 
 ### New Rules
 
- Rule ID      | Category | Severity | Notes                                     
---------------|----------|----------|-------------------------------------------
- MockolateM001 | Usage    | Warning | Moq should be migrated.
+ Rule ID       | Category | Severity | Notes                           
+---------------|----------|----------|---------------------------------
+ MockolateM001 | Usage    | Warning  | Moq should be migrated.         
+ MockolateM002 | Usage    | Warning  | NSubstitute should be migrated. 

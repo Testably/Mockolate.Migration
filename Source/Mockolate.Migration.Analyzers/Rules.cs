@@ -3,17 +3,24 @@
 namespace Mockolate.Migration.Analyzers;
 
 /// <summary>
-/// The rules for the analyzers in this project.
+///     The rules for the analyzers in this project.
 /// </summary>
 public static class Rules
 {
 	private const string UsageCategory = "Usage";
 
 	/// <summary>
-	/// Migration rule for Moq usage. Flags any usage of `new Mock&lt;T&gt;()` or `new Mock&lt;T&gt;()` with target-typed new.
+	///     Migration rule for Moq usage. Flags any usage of `new Mock&lt;T&gt;()` or `new Mock&lt;T&gt;()` with target-typed new.
 	/// </summary>
 	public static readonly DiagnosticDescriptor MoqRule =
 		CreateDescriptor("MockolateM001", UsageCategory, DiagnosticSeverity.Warning);
+
+	/// <summary>
+	///     Migration rule for NSubstitute usage. Flags any usage of `Substitute.For&lt;T&gt;()`, `Substitute.ForPartsOf&lt;T&gt;()`,
+	///     or `Substitute.ForTypesForwardingTo(...)`.
+	/// </summary>
+	public static readonly DiagnosticDescriptor NSubstituteRule =
+		CreateDescriptor("MockolateM002", UsageCategory, DiagnosticSeverity.Warning);
 
 
 	private static DiagnosticDescriptor CreateDescriptor(string diagnosticId, string category,
