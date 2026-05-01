@@ -1455,10 +1455,19 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 			return argument;
 		}
 
-		string paramName = parameter.Identifier.Text;
+		IParameterSymbol? paramSymbol = semanticModel.GetDeclaredSymbol(parameter, cancellationToken);
+		if (paramSymbol is null)
+		{
+			return argument;
+		}
+
+		// Symbol-equality match (text-prefiltered for speed) so identifiers that share the
+		// parameter's name but resolve to a nested-scope declaration don't count as references.
 		bool bodyReferencesParam = lambda.Body.DescendantNodesAndSelf()
 			.OfType<IdentifierNameSyntax>()
-			.Any(id => id.Identifier.Text == paramName);
+			.Where(id => id.Identifier.Text == paramSymbol.Name)
+			.Any(id => SymbolEqualityComparer.Default.Equals(
+				semanticModel.GetSymbolInfo(id, cancellationToken).Symbol, paramSymbol));
 
 		// Case A: body never reads the parameter — drop it entirely so Mockolate's parameterless
 		// Action / Func<TResult> overload binds (works on every method arity).
@@ -1473,8 +1482,7 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 		}
 
 		// Body references the parameter. If the user already typed it, leave alone.
-		IParameterSymbol? paramSymbol = semanticModel.GetDeclaredSymbol(parameter, cancellationToken);
-		bool isCallInfo = paramSymbol?.Type is { Name: "CallInfo", } t &&
+		bool isCallInfo = paramSymbol.Type is { Name: "CallInfo", } t &&
 		                  t.ContainingNamespace?.ToDisplayString() == "NSubstitute.Core";
 		if (!isCallInfo)
 		{
@@ -1483,7 +1491,7 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 
 		// Case B: every reference must be statically resolvable. Any unhandled use → Case C.
 		if (receiverMethod is null ||
-		    !TryRewriteCallInfoBody(lambda, paramName, receiverMethod, semanticModel,
+		    !TryRewriteCallInfoBody(lambda, paramSymbol, receiverMethod, semanticModel,
 			    cancellationToken, out LambdaExpressionSyntax? rewritten))
 		{
 			outcome = CallbackRewriteOutcome.NeedsTodo;
@@ -1494,19 +1502,23 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 		return argument.WithExpression(rewritten!);
 	}
 
-	private static bool TryRewriteCallInfoBody(LambdaExpressionSyntax lambda, string paramName,
+	private static bool TryRewriteCallInfoBody(LambdaExpressionSyntax lambda, IParameterSymbol paramSymbol,
 		IMethodSymbol receiverMethod, SemanticModel semanticModel, CancellationToken cancellationToken,
 		out LambdaExpressionSyntax? rewritten)
 	{
 		rewritten = null;
 
-		// Bail if the body declares a local with the same name as one of the receiver method's
-		// parameters — our rewrite would otherwise produce illegal shadowing (e.g. `string type = type;`).
+		// Bail if any local symbol declared inside the body shares a name with one of the receiver
+		// method's parameters. Covers locals, foreach variables, catch declarations, pattern variables,
+		// local-function parameters, and nested lambda parameters — any of which would either alias the
+		// injected parameter (illegal shadowing at the same scope, e.g. `string type = type;`) or
+		// re-bind the injected name inside a nested scope so our rewrite would resolve to the wrong thing.
 		HashSet<string> paramNames = [.. receiverMethod.Parameters.Select(p => p.Name),];
-		foreach (VariableDeclaratorSyntax declarator in lambda.Body.DescendantNodes()
-			         .OfType<VariableDeclaratorSyntax>())
+		foreach (SyntaxNode node in lambda.Body.DescendantNodes())
 		{
-			if (paramNames.Contains(declarator.Identifier.Text))
+			ISymbol? declared = semanticModel.GetDeclaredSymbol(node, cancellationToken);
+			if (declared is ILocalSymbol or IParameterSymbol or IRangeVariableSymbol &&
+			    paramNames.Contains(declared.Name))
 			{
 				return false;
 			}
@@ -1516,8 +1528,16 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 
 		foreach (IdentifierNameSyntax reference in lambda.Body.DescendantNodesAndSelf()
 			         .OfType<IdentifierNameSyntax>()
-			         .Where(id => id.Identifier.Text == paramName))
+			         .Where(id => id.Identifier.Text == paramSymbol.Name))
 		{
+			// Skip identifiers that share the parameter's name but resolve to a different symbol
+			// (e.g. an inner lambda's parameter that shadows the outer CallInfo parameter).
+			if (!SymbolEqualityComparer.Default.Equals(
+				    semanticModel.GetSymbolInfo(reference, cancellationToken).Symbol, paramSymbol))
+			{
+				continue;
+			}
+
 			switch (reference.Parent)
 			{
 				// call.ArgAt<T>(N) / call.Arg<T>()
@@ -1558,7 +1578,7 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 
 		SeparatedSyntaxList<ParameterSyntax> newParams = SyntaxFactory.SeparatedList(
 			receiverMethod.Parameters.Select(p =>
-				SyntaxFactory.Parameter(SyntaxFactory.Identifier(p.Name))
+				SyntaxFactory.Parameter(EscapedIdentifier(p.Name))
 					.WithType(SyntaxFactory.ParseTypeName(p.Type.ToDisplayString()))));
 
 		rewritten = SyntaxFactory.ParenthesizedLambdaExpression(
@@ -1581,7 +1601,7 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 		    callExpr.ArgumentList.Arguments[0].Expression is LiteralExpressionSyntax { Token.Value: int idx, } &&
 		    idx >= 0 && idx < receiverMethod.Parameters.Length)
 		{
-			replacement = SyntaxFactory.IdentifierName(receiverMethod.Parameters[idx].Name);
+			replacement = SyntaxFactory.IdentifierName(EscapedIdentifier(receiverMethod.Parameters[idx].Name));
 			return true;
 		}
 
@@ -1597,7 +1617,7 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 				return false;
 			}
 
-			replacement = SyntaxFactory.IdentifierName(matches[0].Name);
+			replacement = SyntaxFactory.IdentifierName(EscapedIdentifier(matches[0].Name));
 			return true;
 		}
 
@@ -1615,9 +1635,19 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 			return false;
 		}
 
-		replacement = SyntaxFactory.IdentifierName(receiverMethod.Parameters[idx].Name);
+		replacement = SyntaxFactory.IdentifierName(EscapedIdentifier(receiverMethod.Parameters[idx].Name));
 		return true;
 	}
+
+	/// <summary>
+	///     Builds an identifier token whose source text is escaped with a leading <c>@</c> when
+	///     <paramref name="name" /> collides with a reserved C# keyword (e.g. <c>event</c>, <c>class</c>).
+	///     Contextual keywords are valid identifiers in expression/parameter positions and are left alone.
+	/// </summary>
+	private static SyntaxToken EscapedIdentifier(string name) =>
+		SyntaxFacts.GetKeywordKind(name) != SyntaxKind.None
+			? SyntaxFactory.Identifier(default, SyntaxKind.None, "@" + name, name, default)
+			: SyntaxFactory.Identifier(name);
 
 	/// <summary>
 	///     Walks down a configurator chain (e.g. <c>sub.Bar(1).Returns(v).Throws&lt;E&gt;()</c>) past every

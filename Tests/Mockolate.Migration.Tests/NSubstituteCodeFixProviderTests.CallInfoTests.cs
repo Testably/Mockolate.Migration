@@ -294,6 +294,39 @@ public partial class NSubstituteCodeFixProviderTests
 					""");
 
 			[Fact]
+			public async Task LambdaUsesArgAt_OnReceiverWithKeywordParameterName_EscapesIdentifier()
+				=> await Verifier.VerifyCodeFixAsync(
+					"""
+					using NSubstitute;
+
+					public interface IFoo { string Trigger(string @event); }
+
+					public class Tests
+					{
+						public void Test()
+						{
+							var sub = [|Substitute.For<IFoo>()|];
+							sub.Trigger("x").Returns(call => call.ArgAt<string>(0));
+						}
+					}
+					""",
+					"""
+					using NSubstitute;
+					using Mockolate;
+
+					public interface IFoo { string Trigger(string @event); }
+
+					public class Tests
+					{
+						public void Test()
+						{
+							var sub = IFoo.CreateMock();
+							sub.Mock.Setup.Trigger("x").Returns((string @event) => @event);
+						}
+					}
+					""");
+
+			[Fact]
 			public async Task LambdaUsesArgAt_RewritesToTypedParameters()
 				=> await Verifier.VerifyCodeFixAsync(
 					"""
@@ -367,6 +400,48 @@ public partial class NSubstituteCodeFixProviderTests
 					""");
 
 			[Fact]
+			public async Task LambdaWithForeachVariableShadowingReceiverParameter_FallsBackToTodo()
+				=> await Verifier.VerifyCodeFixAsync(
+					"""
+					using NSubstitute;
+
+					public interface IFoo { int Bar(int x); }
+
+					public class Tests
+					{
+						public void Test()
+						{
+							var sub = [|Substitute.For<IFoo>()|];
+							sub.Bar(0).Returns(call =>
+							{
+								foreach (var x in new[] { 1, 2 }) { _ = x; }
+								return call.ArgAt<int>(0);
+							});
+						}
+					}
+					""",
+					"""
+					using NSubstitute;
+					using Mockolate;
+
+					public interface IFoo { int Bar(int x); }
+
+					public class Tests
+					{
+						public void Test()
+						{
+							var sub = IFoo.CreateMock();
+							// TODO: review CallInfo usage manually — Mockolate's Do/Returns take typed parameters, not CallInfo
+							sub.Mock.Setup.Bar(0).Returns(call =>
+							{
+								foreach (var x in new[] { 1, 2 }) { _ = x; }
+								return call.ArgAt<int>(0);
+							});
+						}
+					}
+					""");
+
+			[Fact]
 			public async Task LambdaWithLocalShadowingParameterName_FallsBackToTodo()
 				=> await Verifier.VerifyCodeFixAsync(
 					"""
@@ -406,6 +481,85 @@ public partial class NSubstituteCodeFixProviderTests
 								int amount = call.ArgAt<int>(1);
 								return type == "Dark" && amount > 0;
 							});
+						}
+					}
+					""");
+
+			[Fact]
+			public async Task LambdaWithNestedLambdaParameterShadowingReceiverParameter_FallsBackToTodo()
+				=> await Verifier.VerifyCodeFixAsync(
+					"""
+					using System;
+					using NSubstitute;
+
+					public interface IFoo { int Bar(int x); }
+
+					public class Tests
+					{
+						public void Test()
+						{
+							var sub = [|Substitute.For<IFoo>()|];
+							sub.Bar(0).Returns(call =>
+							{
+								Action<int> a = (x) => Console.WriteLine(x);
+								return call.ArgAt<int>(0);
+							});
+						}
+					}
+					""",
+					"""
+					using System;
+					using NSubstitute;
+					using Mockolate;
+
+					public interface IFoo { int Bar(int x); }
+
+					public class Tests
+					{
+						public void Test()
+						{
+							var sub = IFoo.CreateMock();
+							// TODO: review CallInfo usage manually — Mockolate's Do/Returns take typed parameters, not CallInfo
+							sub.Mock.Setup.Bar(0).Returns(call =>
+							{
+								Action<int> a = (x) => Console.WriteLine(x);
+								return call.ArgAt<int>(0);
+							});
+						}
+					}
+					""");
+
+			[Fact]
+			public async Task LambdaWithNestedLambdaShadowingCallInfoName_DropsParameter()
+				=> await Verifier.VerifyCodeFixAsync(
+					"""
+					using System;
+					using NSubstitute;
+
+					public interface IFoo { int Bar(int x); }
+
+					public class Tests
+					{
+						public void Test()
+						{
+							var sub = [|Substitute.For<IFoo>()|];
+							sub.Bar(0).Returns(call => ((Func<int, int>)(call => call + 1))(7));
+						}
+					}
+					""",
+					"""
+					using System;
+					using NSubstitute;
+					using Mockolate;
+
+					public interface IFoo { int Bar(int x); }
+
+					public class Tests
+					{
+						public void Test()
+						{
+							var sub = IFoo.CreateMock();
+							sub.Mock.Setup.Bar(0).Returns(() => ((Func<int, int>)(call => call + 1))(7));
 						}
 					}
 					""");
