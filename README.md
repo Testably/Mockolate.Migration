@@ -42,7 +42,8 @@ step.
 The Moq fixer rewrites `new Mock<T>(...)` to `T.CreateMock(...)`, drops every trailing `.Object` access, and
 moves setups and verifications onto the strongly-typed `Mock.Setup` / `Mock.Verify` chains. Strict mocks are
 mapped to `MockBehavior.Default.ThrowingWhenNotSetup()`, `It.Is<T>(predicate)` becomes `It.Satisfies<T>(...)`,
-and event raising / verification are routed through `Mock.Raise` and `Mock.Verify.Event`.
+and event raising / verification are routed through `Mock.Raise` and event-specific
+`Mock.Verify.<Event>.Subscribed()` / `Unsubscribed()` calls.
 
 ```csharp
 // Before (Moq)
@@ -70,7 +71,7 @@ mock.VerifyAdd(m => m.Changed += It.IsAny<EventHandler>(), Times.Once());
 // After (Mockolate)
 var mock = IFoo.CreateMock(MockBehavior.Default.ThrowingWhenNotSetup());
 mock.Mock.Setup.Name.InitializeWith("initial");
-mock.Mock.Raise.Changed(mock, EventArgs.Empty);
+mock.Mock.Raise.Changed(null, EventArgs.Empty);
 mock.Mock.Verify.Changed.Subscribed().Once();
 ```
 
@@ -106,9 +107,9 @@ mock.Mock.Verify.Changed.Subscribed().Once();
 The NSubstitute fixer rewrites `Substitute.For<T>(...)` to `T.CreateMock(...)` and reroutes the
 implicit setup/verify calls (`sub.Method(args).Returns(...)`, `sub.Received().Method(...)`) through the
 strongly-typed `Mock.Setup` / `Mock.Verify` chains. `Arg.Any<T>()` becomes `It.IsAny<T>()`,
-`Arg.Is<T>(predicate)` becomes `It.Satisfies<T>(...)`, and `Raise.Event(...)` is rewritten to
-`Mock.Raise.Event(...)`. Nested-mock setups (`sub.Child.M(args).Returns(...)`) are migrated with a
-`// TODO` comment because the parent must be wired up to return the child mock manually.
+`Arg.Is<T>(predicate)` becomes `It.Satisfies<T>(...)`, and `Raise.Event(...)` is rewritten to the
+corresponding `sub.Mock.Raise.<Event>(...)` call. Nested-mock setups (`sub.Child.M(args).Returns(...)`)
+are migrated with a `// TODO` comment because the parent must be wired up to return the child mock manually.
 
 ```csharp
 // Before (NSubstitute)
