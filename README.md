@@ -103,11 +103,10 @@ step.
 ## Argument arity
 
 Mockolate exposes both a direct-value overload and a matcher overload for properties and for methods with up to
-**four** parameters; methods with five or more parameters only expose the matcher overload. The migration adapts
-the rewritten argument list to that shape:
+**four** parameters; methods with five or more parameters only expose the matcher overload. The migration rewrites
+existing matcher expressions, but otherwise preserves the argument expressions written by the user:
 
-- Direct values written by the user are preserved as direct values for properties and for methods with up to four
-  parameters. For methods with five or more parameters every plain value is wrapped in `It.Is(value)` so the
-  migrated call still binds to the matcher overload.
+- Plain values are kept as plain values; the migration does not currently wrap them in `It.Is(value)` based on
+  method arity.
 - Existing `It.Is(...)` / `Arg.Is(...)` matchers are always migrated to `It.Is(...)` and never collapsed back to a
   bare value, even on properties or low-arity methods.
