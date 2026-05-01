@@ -1134,15 +1134,15 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 
 	private static bool TryWrapAsItIs(ArgumentSyntax arg, out ArgumentSyntax wrapped)
 	{
-		wrapped = arg;
-
 		if (!arg.RefKindKeyword.IsKind(SyntaxKind.None))
 		{
+			wrapped = arg;
 			return false;
 		}
 
 		if (IsRootedInItInvocation(arg.Expression))
 		{
+			wrapped = arg;
 			return false;
 		}
 
@@ -1153,7 +1153,7 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 				SyntaxFactory.IdentifierName("Is")),
 			SyntaxFactory.ArgumentList(
 				SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(arg.Expression))));
-		wrapped = SyntaxFactory.Argument(itIs).WithTriviaFrom(arg);
+		wrapped = arg.WithExpression(itIs);
 		return true;
 	}
 

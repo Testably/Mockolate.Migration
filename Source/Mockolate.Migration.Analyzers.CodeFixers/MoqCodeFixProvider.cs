@@ -1483,17 +1483,17 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 
 	private static bool TryWrapAsItIs(ArgumentSyntax arg, out ArgumentSyntax wrapped)
 	{
-		wrapped = arg;
-
 		// ref/out arguments already carry their own It.IsRef/It.IsOut wrapper from TransformRefAndOutArguments.
 		if (!arg.RefKindKeyword.IsKind(SyntaxKind.None))
 		{
+			wrapped = arg;
 			return false;
 		}
 
 		// Skip arguments that already resolve to an It.* matcher (or a chained call on one).
 		if (IsRootedInItInvocation(arg.Expression))
 		{
+			wrapped = arg;
 			return false;
 		}
 
@@ -1504,7 +1504,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 				SyntaxFactory.IdentifierName("Is")),
 			SyntaxFactory.ArgumentList(
 				SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(arg.Expression))));
-		wrapped = SyntaxFactory.Argument(itIs).WithTriviaFrom(arg);
+		wrapped = arg.WithExpression(itIs);
 		return true;
 	}
 
