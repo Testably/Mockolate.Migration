@@ -5,77 +5,22 @@ namespace Mockolate.Migration.Tests;
 
 public partial class NSubstituteCodeFixProviderTests
 {
-	public sealed class CreationTests
+	public sealed class SetupTests
 	{
 		[Fact]
-		public async Task SubstituteFor_FullyQualified_IsReplaced()
-			=> await Verifier.VerifyCodeFixAsync(
-				"""
-				public interface IFoo { }
-
-				public class Tests
-				{
-					public void Test()
-					{
-						var sub = [|NSubstitute.Substitute.For<IFoo>()|];
-					}
-				}
-				""",
-				"""
-				using Mockolate;
-
-				public interface IFoo { }
-
-				public class Tests
-				{
-					public void Test()
-					{
-						var sub = IFoo.CreateMock();
-					}
-				}
-				""");
-
-		[Fact]
-		public async Task SubstituteFor_GlobalQualified_IsReplaced()
-			=> await Verifier.VerifyCodeFixAsync(
-				"""
-				public interface IFoo { }
-
-				public class Tests
-				{
-					public void Test()
-					{
-						var sub = [|global::NSubstitute.Substitute.For<IFoo>()|];
-					}
-				}
-				""",
-				"""
-				using Mockolate;
-
-				public interface IFoo { }
-
-				public class Tests
-				{
-					public void Test()
-					{
-						var sub = IFoo.CreateMock();
-					}
-				}
-				""");
-
-		[Fact]
-		public async Task SubstituteFor_IsReplaced()
+		public async Task ArgAny_IsRewrittenToItIsAny()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
 				using NSubstitute;
 
-				public interface IFoo { }
+				public interface IFoo { int Bar(int x); }
 
 				public class Tests
 				{
 					public void Test()
 					{
 						var sub = [|Substitute.For<IFoo>()|];
+						sub.Bar(Arg.Any<int>()).Returns(42);
 					}
 				}
 				""",
@@ -83,200 +28,32 @@ public partial class NSubstituteCodeFixProviderTests
 				using NSubstitute;
 				using Mockolate;
 
-				public interface IFoo { }
+				public interface IFoo { int Bar(int x); }
 
 				public class Tests
 				{
 					public void Test()
 					{
 						var sub = IFoo.CreateMock();
+						sub.Mock.Setup.Bar(It.IsAny<int>()).Returns(42);
 					}
 				}
 				""");
 
 		[Fact]
-		public async Task SubstituteFor_WithConstructorArguments_PreservesArguments()
+		public async Task ArgCompat_IsRewrittenToItMatchers()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
 				using NSubstitute;
 
-				public class Foo
-				{
-					public Foo(string name, int count) { }
-				}
-
-				public class Tests
-				{
-					public void Test()
-					{
-						var sub = [|Substitute.For<Foo>("name", 42)|];
-					}
-				}
-				""",
-				"""
-				using NSubstitute;
-				using Mockolate;
-
-				public class Foo
-				{
-					public Foo(string name, int count) { }
-				}
-
-				public class Tests
-				{
-					public void Test()
-					{
-						var sub = Foo.CreateMock("name", 42);
-					}
-				}
-				""");
-
-		[Fact]
-		public async Task SubstituteFor_WithMultipleInterfaces_ChainsImplementing()
-			=> await Verifier.VerifyCodeFixAsync(
-				"""
-				using NSubstitute;
-
-				public interface IFoo { }
-				public interface IBar { }
-
-				public class Tests
-				{
-					public void Test()
-					{
-						var sub = [|Substitute.For<IFoo, IBar>()|];
-					}
-				}
-				""",
-				"""
-				using NSubstitute;
-				using Mockolate;
-
-				public interface IFoo { }
-				public interface IBar { }
-
-				public class Tests
-				{
-					public void Test()
-					{
-						var sub = IFoo.CreateMock().Implementing<IBar>();
-					}
-				}
-				""");
-
-		[Fact]
-		public async Task SubstituteFor_WithThreeInterfaces_ChainsImplementingTwice()
-			=> await Verifier.VerifyCodeFixAsync(
-				"""
-				using NSubstitute;
-
-				public interface IFoo { }
-				public interface IBar { }
-				public interface IBaz { }
-
-				public class Tests
-				{
-					public void Test()
-					{
-						var sub = [|Substitute.For<IFoo, IBar, IBaz>()|];
-					}
-				}
-				""",
-				"""
-				using NSubstitute;
-				using Mockolate;
-
-				public interface IFoo { }
-				public interface IBar { }
-				public interface IBaz { }
-
-				public class Tests
-				{
-					public void Test()
-					{
-						var sub = IFoo.CreateMock().Implementing<IBar>().Implementing<IBaz>();
-					}
-				}
-				""");
-
-		[Fact]
-		public async Task SubstituteForPartsOf_IsReplacedWithCreateMock()
-			=> await Verifier.VerifyCodeFixAsync(
-				"""
-				using NSubstitute;
-
-				public class Foo { public virtual int Bar() => 0; }
-
-				public class Tests
-				{
-					public void Test()
-					{
-						var sub = [|Substitute.ForPartsOf<Foo>()|];
-					}
-				}
-				""",
-				"""
-				using NSubstitute;
-				using Mockolate;
-
-				public class Foo { public virtual int Bar() => 0; }
-
-				public class Tests
-				{
-					public void Test()
-					{
-						var sub = Foo.CreateMock();
-					}
-				}
-				""");
-
-		[Fact]
-		public async Task SubstituteForTypeForwardingTo_WrapsNewInstance()
-			=> await Verifier.VerifyCodeFixAsync(
-				"""
-				using NSubstitute;
-
-				public interface IFoo { void Bar(); }
-				public class FooImpl : IFoo { public void Bar() { } }
-
-				public class Tests
-				{
-					public void Test()
-					{
-						var sub = [|Substitute.ForTypeForwardingTo<IFoo, FooImpl>()|];
-					}
-				}
-				""",
-				"""
-				using NSubstitute;
-				using Mockolate;
-
-				public interface IFoo { void Bar(); }
-				public class FooImpl : IFoo { public void Bar() { } }
-
-				public class Tests
-				{
-					public void Test()
-					{
-						var sub = IFoo.CreateMock().Wrapping(new FooImpl());
-					}
-				}
-				""");
-
-		[Fact]
-		public async Task WithExistingMockolateUsing_DoesNotDuplicateUsing()
-			=> await Verifier.VerifyCodeFixAsync(
-				"""
-				using NSubstitute;
-				using Mockolate;
-
-				public interface IFoo { }
+				public interface IFoo { int Sum(int x, int y); }
 
 				public class Tests
 				{
 					public void Test()
 					{
 						var sub = [|Substitute.For<IFoo>()|];
+						sub.Sum(Arg.Compat.Any<int>(), Arg.Compat.Is<int>(y => y > 0)).Returns(42);
 					}
 				}
 				""",
@@ -284,13 +61,216 @@ public partial class NSubstituteCodeFixProviderTests
 				using NSubstitute;
 				using Mockolate;
 
-				public interface IFoo { }
+				public interface IFoo { int Sum(int x, int y); }
 
 				public class Tests
 				{
 					public void Test()
 					{
 						var sub = IFoo.CreateMock();
+						sub.Mock.Setup.Sum(It.IsAny<int>(), It.Satisfies<int>(y => y > 0)).Returns(42);
+					}
+				}
+				""");
+
+		[Fact]
+		public async Task ArgIsPredicate_IsRewrittenToItSatisfies()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using NSubstitute;
+
+				public interface IFoo { int Bar(int x); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = [|Substitute.For<IFoo>()|];
+						sub.Bar(Arg.Is<int>(x => x > 0)).Returns(42);
+					}
+				}
+				""",
+				"""
+				using NSubstitute;
+				using Mockolate;
+
+				public interface IFoo { int Bar(int x); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = IFoo.CreateMock();
+						sub.Mock.Setup.Bar(It.Satisfies<int>(x => x > 0)).Returns(42);
+					}
+				}
+				""");
+
+		[Fact]
+		public async Task ArgIsValue_IsRewrittenToItIs()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using NSubstitute;
+
+				public interface IFoo { int Bar(int x); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = [|Substitute.For<IFoo>()|];
+						sub.Bar(Arg.Is(5)).Returns(42);
+					}
+				}
+				""",
+				"""
+				using NSubstitute;
+				using Mockolate;
+
+				public interface IFoo { int Bar(int x); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = IFoo.CreateMock();
+						sub.Mock.Setup.Bar(It.Is(5)).Returns(42);
+					}
+				}
+				""");
+
+		[Fact]
+		public async Task MethodReturns_IsRewrittenToMockSetup()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using NSubstitute;
+
+				public interface IFoo { int Bar(int x); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = [|Substitute.For<IFoo>()|];
+						sub.Bar(1).Returns(42);
+					}
+				}
+				""",
+				"""
+				using NSubstitute;
+				using Mockolate;
+
+				public interface IFoo { int Bar(int x); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = IFoo.CreateMock();
+						sub.Mock.Setup.Bar(1).Returns(42);
+					}
+				}
+				""");
+
+		[Fact]
+		public async Task MethodThrowsGeneric_IsRewrittenToMockSetup()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using System;
+				using NSubstitute;
+				using NSubstitute.ExceptionExtensions;
+
+				public interface IFoo { int Bar(int x); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = [|Substitute.For<IFoo>()|];
+						sub.Bar(1).Throws<InvalidOperationException>();
+					}
+				}
+				""",
+				"""
+				using System;
+				using NSubstitute;
+				using NSubstitute.ExceptionExtensions;
+				using Mockolate;
+
+				public interface IFoo { int Bar(int x); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = IFoo.CreateMock();
+						sub.Mock.Setup.Bar(1).Throws<InvalidOperationException>();
+					}
+				}
+				""");
+
+		[Fact]
+		public async Task MultipleMatchers_AreAllRewritten()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using NSubstitute;
+
+				public interface IFoo { int Sum(int x, int y); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = [|Substitute.For<IFoo>()|];
+						sub.Sum(Arg.Any<int>(), Arg.Is<int>(y => y > 0)).Returns(42);
+					}
+				}
+				""",
+				"""
+				using NSubstitute;
+				using Mockolate;
+
+				public interface IFoo { int Sum(int x, int y); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = IFoo.CreateMock();
+						sub.Mock.Setup.Sum(It.IsAny<int>(), It.Satisfies<int>(y => y > 0)).Returns(42);
+					}
+				}
+				""");
+
+		[Fact]
+		public async Task PropertyReturns_IsRewrittenToMockSetup()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using NSubstitute;
+
+				public interface IFoo { string Name { get; } }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = [|Substitute.For<IFoo>()|];
+						sub.Name.Returns("bar");
+					}
+				}
+				""",
+				"""
+				using NSubstitute;
+				using Mockolate;
+
+				public interface IFoo { string Name { get; } }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = IFoo.CreateMock();
+						sub.Mock.Setup.Name.Returns("bar");
 					}
 				}
 				""");
