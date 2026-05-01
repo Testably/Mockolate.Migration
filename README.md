@@ -22,22 +22,59 @@ dotnet add package Mockolate.Migration
 The package only needs to be referenced while you are migrating — it ships the analyzer and code fixer,
 not runtime code. Once the source library is gone from a project you can remove the reference again.
 
-## Usage
+## How it works
 
 After installing the package, every supported construct is reported as a warning. Apply the relevant
 code fix from your IDE (Visual Studio, Rider, VS Code with C# Dev Kit) or via
 `dotnet format analyzers` to rewrite the call site.
 
-| Diagnostic    | Source library | Code fix title                  |
-|---------------|----------------|---------------------------------|
-| `MockolateM001` | Moq            | *Migrate Moq to Mockolate*       |
+| Diagnostic      | Source library | Code fix title                     |
+|-----------------|----------------|------------------------------------|
+| `MockolateM001` | Moq            | *Migrate Moq to Mockolate*         |
 | `MockolateM002` | NSubstitute    | *Migrate NSubstitute to Mockolate* |
 
 The fixer rewrites the whole mock — the construction call, all setup calls on that mock, the
 corresponding verification calls, event wiring, and trailing `.Object` accesses (Moq) — in a single
 step.
 
-## Supported Moq migrations
+## Migrating from Moq
+
+The Moq fixer rewrites `new Mock<T>(...)` to `T.CreateMock(...)`, drops every trailing `.Object` access, and
+moves setups and verifications onto the strongly-typed `Mock.Setup` / `Mock.Verify` chains. Strict mocks are
+mapped to `MockBehavior.Default.ThrowingWhenNotSetup()`, `It.Is<T>(predicate)` becomes `It.Satisfies<T>(...)`,
+and event raising / verification are routed through `Mock.Raise` and `Mock.Verify.Event`.
+
+```csharp
+// Before (Moq)
+var mock = new Mock<IFoo>();
+mock.Setup(m => m.Compute(It.IsAny<int>())).Returns(42);
+var sut = new Service(mock.Object);
+sut.Run();
+mock.Verify(m => m.Compute(It.IsAny<int>()), Times.Once());
+
+// After (Mockolate)
+var mock = IFoo.CreateMock();
+mock.Mock.Setup.Compute(It.IsAny<int>()).Returns(42);
+var sut = new Service(mock);
+sut.Run();
+mock.Mock.Verify.Compute(It.IsAny<int>()).Once();
+```
+
+```csharp
+// Before (Moq) — properties and events
+var mock = new Mock<IFoo>(MockBehavior.Strict);
+mock.SetupProperty(m => m.Name, "initial");
+mock.Raise(m => m.Changed += null, EventArgs.Empty);
+mock.VerifyAdd(m => m.Changed += It.IsAny<EventHandler>(), Times.Once());
+
+// After (Mockolate)
+var mock = IFoo.CreateMock(MockBehavior.Default.ThrowingWhenNotSetup());
+mock.Mock.Setup.Name.InitializeWith("initial");
+mock.Mock.Raise.Changed(mock, EventArgs.Empty);
+mock.Mock.Verify.Changed.Subscribed().Once();
+```
+
+### Supported Moq migrations
 
 | Moq construct                                            | Rewritten to                                                                |
 |----------------------------------------------------------|-----------------------------------------------------------------------------|
@@ -64,43 +101,46 @@ step.
 | `It.Ref<T>.IsAny` / `out` parameters                     | `It.IsAnyRef<T>()` / `It.IsOut(() => value)`                                |
 | Nested mocks (`sut.Setup(m => m.Child.Prop)`)            | Navigation chain is preserved: `sut.Child.Mock.Setup.Prop`                  |
 
-## Supported NSubstitute migrations
+## Migrating from NSubstitute
 
-| NSubstitute construct                                              | Rewritten to                                                                          |
-|--------------------------------------------------------------------|---------------------------------------------------------------------------------------|
-| `Substitute.For<IFoo>()`                                           | `IFoo.CreateMock()`                                                                   |
-| `Substitute.For<IFoo>(args)`                                       | `IFoo.CreateMock(args)`                                                               |
-| `Substitute.For<IFoo, IBar>()`                                     | `IFoo.CreateMock().Implementing<IBar>()` (chains for additional types)                |
-| `Substitute.ForPartsOf<MyClass>()`                                 | `MyClass.CreateMock()` (Mockolate calls base by default)                              |
-| `Substitute.ForTypeForwardingTo<TInterface, TClass>(args)`         | `TInterface.CreateMock().Wrapping(new TClass(args))`                                  |
-| `sub.Method(args).Returns(v)`                                      | `sub.Mock.Setup.Method(args).Returns(v)`                                              |
-| `sub.Method(args).Returns(v1, v2, v3)`                             | `sub.Mock.Setup.Method(args).Returns(v1).Returns(v2).Returns(v3)`                     |
-| `sub.Method(args).Throws<E>()` / `Throws(ex)`                      | `sub.Mock.Setup.Method(args).Throws<E>()` / `.Throws(ex)`                             |
-| `sub.Method(args).ReturnsForAnyArgs(v)`                            | `sub.Mock.Setup.Method(args).AnyParameters().Returns(v)`                              |
-| `sub.Method(args).ThrowsForAnyArgs<E>()`                           | `sub.Mock.Setup.Method(args).AnyParameters().Throws<E>()`                             |
-| `sub.Method(args).Returns(v).AndDoes(cb)`                          | `sub.Mock.Setup.Method(args).Returns(v).Do(cb)`                                       |
-| `sub.Property.Returns(v)`                                          | `sub.Mock.Setup.Property.Returns(v)`                                                  |
-| `sub.Received().Method(args)`                                      | `sub.Mock.Verify.Method(args).AtLeastOnce()`                                          |
-| `sub.Received(n).Method(args)`                                     | `sub.Mock.Verify.Method(args).Exactly(n)` (`Once()` for `n == 1`)                     |
-| `sub.DidNotReceive().Method(args)`                                 | `sub.Mock.Verify.Method(args).Never()`                                                |
-| `sub.ReceivedWithAnyArgs().Method(default, default)`               | `sub.Mock.Verify.Method(default, default).AnyParameters().AtLeastOnce()`              |
-| `sub.DidNotReceiveWithAnyArgs().Method(default, default)`          | `sub.Mock.Verify.Method(default, default).AnyParameters().Never()`                    |
-| `_ = sub.Received().Prop`                                          | `sub.Mock.Verify.Prop.Got().AtLeastOnce()`                                            |
-| `sub.Received().Prop = v`                                          | `sub.Mock.Verify.Prop.Set(v).AtLeastOnce()`                                           |
-| `sub.ClearReceivedCalls()`                                         | `sub.Mock.ClearAllInteractions()`                                                     |
-| `sub.MyEvent += Raise.Event()`                                     | `sub.Mock.Raise.MyEvent(null, EventArgs.Empty)`                                       |
-| `sub.MyEvent += Raise.EventWith(sender, args)`                     | `sub.Mock.Raise.MyEvent(sender, args)`                                                |
-| `sub.MyEvent += Raise.EventWith(args)`                             | `sub.Mock.Raise.MyEvent(null, args)`                                                  |
-| `sub.MyEvent += Raise.Event<TDelegate>(args...)`                   | `sub.Mock.Raise.MyEvent(args...)` (delegate type dropped)                             |
-| `sub.When(x => x.M(args)).Do(cb)`                                  | `sub.Mock.Setup.M(args).Do(cb)`                                                       |
-| `sub.When(x => x.M(args)).DoNotCallBase()`                         | `sub.Mock.Setup.M(args).SkippingBaseClass()`                                          |
-| `Arg.Any<T>()`                                                     | `It.IsAny<T>()`                                                                       |
-| `Arg.Is<T>(predicate)`                                             | `It.Satisfies<T>(predicate)`                                                          |
-| `Arg.Is(value)` / `Arg.Is<T>(value)`                               | `It.Is(value)` / `It.Is<T>(value)`                                                    |
-| `Arg.Compat.X<T>(...)`                                             | same as the corresponding `Arg.X<T>(...)`                                             |
-| Nested mocks (`sub.Child.M(args).Returns(v)`)                      | `sub.Child.Mock.Setup.M(args).Returns(v)` plus a `// TODO` comment to register `Child` |
+The NSubstitute fixer rewrites `Substitute.For<T>(...)` to `T.CreateMock(...)` and reroutes the
+implicit setup/verify calls (`sub.Method(args).Returns(...)`, `sub.Received().Method(...)`) through the
+strongly-typed `Mock.Setup` / `Mock.Verify` chains. `Arg.Any<T>()` becomes `It.IsAny<T>()`,
+`Arg.Is<T>(predicate)` becomes `It.Satisfies<T>(...)`, and `Raise.Event(...)` is rewritten to
+`Mock.Raise.Event(...)`. Nested-mock setups (`sub.Child.M(args).Returns(...)`) are migrated with a
+`// TODO` comment because the parent must be wired up to return the child mock manually.
 
-## CallInfo callbacks
+```csharp
+// Before (NSubstitute)
+var sub = Substitute.For<IFoo>();
+sub.Compute(Arg.Any<int>()).Returns(42);
+var sut = new Service(sub);
+sut.Run();
+sub.Received(1).Compute(Arg.Any<int>());
+
+// After (Mockolate)
+var sub = IFoo.CreateMock();
+sub.Mock.Setup.Compute(It.IsAny<int>()).Returns(42);
+var sut = new Service(sub);
+sut.Run();
+sub.Mock.Verify.Compute(It.IsAny<int>()).Once();
+```
+
+```csharp
+// Before (NSubstitute) — sequential returns, When/Do, events
+var sub = Substitute.For<IFoo>();
+sub.Compute(0).Returns(1, 2, 3);
+sub.When(x => x.Reset()).Do(_ => counter++);
+sub.Changed += Raise.EventWith(EventArgs.Empty);
+
+// After (Mockolate)
+var sub = IFoo.CreateMock();
+sub.Mock.Setup.Compute(0).Returns(1).Returns(2).Returns(3);
+sub.Mock.Setup.Reset().Do(() => counter++);
+sub.Mock.Raise.Changed(null, EventArgs.Empty);
+```
+
+### CallInfo callbacks
 
 NSubstitute's `Returns(call => …)`, `When(...).Do(call => …)`, and `AndDoes(call => …)` callbacks
 receive a `CallInfo` parameter that exposes the invocation arguments. Mockolate's equivalent
@@ -115,13 +155,38 @@ overloads instead take the method's parameters directly, so the migration rewrit
   `call.Arg<T>()`, or local variables that would shadow the injected parameter names — preserve
   the original lambda and emit a `// TODO` comment so the rewrite can be done by hand.
 
-## Argument arity
+### Supported NSubstitute migrations
 
-Mockolate exposes both a direct-value overload and a matcher overload for properties and for methods with up to
-**four** parameters; methods with five or more parameters only expose the matcher overload. The migration rewrites
-existing matcher expressions, but otherwise preserves the argument expressions written by the user:
-
-- Plain values are kept as plain values; the migration does not currently wrap them in `It.Is(value)` based on
-  method arity.
-- Existing `It.Is(...)` / `Arg.Is(...)` matchers are always migrated to `It.Is(...)` and never collapsed back to a
-  bare value, even on properties or low-arity methods.
+| NSubstitute construct                                      | Rewritten to                                                                           |
+|------------------------------------------------------------|----------------------------------------------------------------------------------------|
+| `Substitute.For<IFoo>()`                                   | `IFoo.CreateMock()`                                                                    |
+| `Substitute.For<IFoo>(args)`                               | `IFoo.CreateMock(args)`                                                                |
+| `Substitute.For<IFoo, IBar>()`                             | `IFoo.CreateMock().Implementing<IBar>()` (chains for additional types)                 |
+| `Substitute.ForPartsOf<MyClass>()`                         | `MyClass.CreateMock()` (Mockolate calls base by default)                               |
+| `Substitute.ForTypeForwardingTo<TInterface, TClass>(args)` | `TInterface.CreateMock().Wrapping(new TClass(args))`                                   |
+| `sub.Method(args).Returns(v)`                              | `sub.Mock.Setup.Method(args).Returns(v)`                                               |
+| `sub.Method(args).Returns(v1, v2, v3)`                     | `sub.Mock.Setup.Method(args).Returns(v1).Returns(v2).Returns(v3)`                      |
+| `sub.Method(args).Throws<E>()` / `Throws(ex)`              | `sub.Mock.Setup.Method(args).Throws<E>()` / `.Throws(ex)`                              |
+| `sub.Method(args).ReturnsForAnyArgs(v)`                    | `sub.Mock.Setup.Method(args).AnyParameters().Returns(v)`                               |
+| `sub.Method(args).ThrowsForAnyArgs<E>()`                   | `sub.Mock.Setup.Method(args).AnyParameters().Throws<E>()`                              |
+| `sub.Method(args).Returns(v).AndDoes(cb)`                  | `sub.Mock.Setup.Method(args).Returns(v).Do(cb)`                                        |
+| `sub.Property.Returns(v)`                                  | `sub.Mock.Setup.Property.Returns(v)`                                                   |
+| `sub.Received().Method(args)`                              | `sub.Mock.Verify.Method(args).AtLeastOnce()`                                           |
+| `sub.Received(n).Method(args)`                             | `sub.Mock.Verify.Method(args).Exactly(n)` (`Once()` for `n == 1`)                      |
+| `sub.DidNotReceive().Method(args)`                         | `sub.Mock.Verify.Method(args).Never()`                                                 |
+| `sub.ReceivedWithAnyArgs().Method(default, default)`       | `sub.Mock.Verify.Method(default, default).AnyParameters().AtLeastOnce()`               |
+| `sub.DidNotReceiveWithAnyArgs().Method(default, default)`  | `sub.Mock.Verify.Method(default, default).AnyParameters().Never()`                     |
+| `_ = sub.Received().Prop`                                  | `sub.Mock.Verify.Prop.Got().AtLeastOnce()`                                             |
+| `sub.Received().Prop = v`                                  | `sub.Mock.Verify.Prop.Set(v).AtLeastOnce()`                                            |
+| `sub.ClearReceivedCalls()`                                 | `sub.Mock.ClearAllInteractions()`                                                      |
+| `sub.MyEvent += Raise.Event()`                             | `sub.Mock.Raise.MyEvent(null, EventArgs.Empty)`                                        |
+| `sub.MyEvent += Raise.EventWith(sender, args)`             | `sub.Mock.Raise.MyEvent(sender, args)`                                                 |
+| `sub.MyEvent += Raise.EventWith(args)`                     | `sub.Mock.Raise.MyEvent(null, args)`                                                   |
+| `sub.MyEvent += Raise.Event<TDelegate>(args...)`           | `sub.Mock.Raise.MyEvent(args...)` (delegate type dropped)                              |
+| `sub.When(x => x.M(args)).Do(cb)`                          | `sub.Mock.Setup.M(args).Do(cb)`                                                        |
+| `sub.When(x => x.M(args)).DoNotCallBase()`                 | `sub.Mock.Setup.M(args).SkippingBaseClass()`                                           |
+| `Arg.Any<T>()`                                             | `It.IsAny<T>()`                                                                        |
+| `Arg.Is<T>(predicate)`                                     | `It.Satisfies<T>(predicate)`                                                           |
+| `Arg.Is(value)` / `Arg.Is<T>(value)`                       | `It.Is(value)` / `It.Is<T>(value)`                                                     |
+| `Arg.Compat.X<T>(...)`                                     | same as the corresponding `Arg.X<T>(...)`                                              |
+| Nested mocks (`sub.Child.M(args).Returns(v)`)              | `sub.Child.Mock.Setup.M(args).Returns(v)` plus a `// TODO` comment to register `Child` |
