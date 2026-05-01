@@ -274,5 +274,71 @@ public partial class NSubstituteCodeFixProviderTests
 					}
 				}
 				""");
+
+		[Fact]
+		public async Task SequentialPropertyReturns_AreSplitIntoChain()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using NSubstitute;
+
+				public interface IFoo { string Name { get; } }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = [|Substitute.For<IFoo>()|];
+						sub.Name.Returns("a", "b", "c");
+					}
+				}
+				""",
+				"""
+				using NSubstitute;
+				using Mockolate;
+
+				public interface IFoo { string Name { get; } }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = IFoo.CreateMock();
+						sub.Mock.Setup.Name.Returns("a").Returns("b").Returns("c");
+					}
+				}
+				""");
+
+		[Fact]
+		public async Task SequentialReturns_AreSplitIntoChain()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using NSubstitute;
+
+				public interface IFoo { int Bar(int x); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = [|Substitute.For<IFoo>()|];
+						sub.Bar(1).Returns(1, 2, 3);
+					}
+				}
+				""",
+				"""
+				using NSubstitute;
+				using Mockolate;
+
+				public interface IFoo { int Bar(int x); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = IFoo.CreateMock();
+						sub.Mock.Setup.Bar(1).Returns(1).Returns(2).Returns(3);
+					}
+				}
+				""");
 	}
 }
