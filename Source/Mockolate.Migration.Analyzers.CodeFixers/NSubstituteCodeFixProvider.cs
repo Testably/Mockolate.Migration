@@ -125,13 +125,6 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 		return null;
 	}
 
-	private static bool IsSubstituteCreationCall(InvocationExpressionSyntax invocation) =>
-		invocation.Expression is MemberAccessExpressionSyntax
-		{
-			Expression: IdentifierNameSyntax { Identifier.Text: "Substitute", },
-			Name: var name,
-		} && name.Identifier.Text is "For" or "ForPartsOf" or "ForTypeForwardingTo";
-
 	private static ISymbol? GetDeclaredMockSymbol(SemanticModel? semanticModel,
 		InvocationExpressionSyntax substituteCall, CancellationToken cancellationToken)
 	{
@@ -170,15 +163,9 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 		}
 
 		Dictionary<SyntaxNode, SyntaxNode> result = [];
-		HashSet<SyntaxNode> alreadyAccountedFor = [];
 
 		foreach (InvocationExpressionSyntax outerInvocation in allInvocations)
 		{
-			if (alreadyAccountedFor.Contains(outerInvocation))
-			{
-				continue;
-			}
-
 			if (outerInvocation.Expression is not MemberAccessExpressionSyntax outerAccess ||
 			    !SetupConfiguratorMethods.Contains(outerAccess.Name.Identifier.Text))
 			{
@@ -198,7 +185,8 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 					continue;
 				}
 
-				ArgumentListSyntax transformedArgs = TransformNSubstituteArgReferences(targetInvocation.ArgumentList);
+				ArgumentListSyntax transformedArgs =
+					TransformNSubstituteArgReferences(targetInvocation.ArgumentList, semanticModel, cancellationToken);
 
 				MemberAccessExpressionSyntax setupAccess = BuildSetupAccess(
 					targetMemberAccess.Expression, targetMemberAccess.Name);
@@ -206,7 +194,6 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 					.WithTriviaFrom(targetInvocation);
 
 				result[targetInvocation] = setupInvocation;
-				alreadyAccountedFor.Add(targetInvocation);
 				continue;
 			}
 
@@ -221,7 +208,6 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 					targetPropertyAccess.Expression, targetPropertyAccess.Name);
 
 				result[targetPropertyAccess] = setupAccess.WithTriviaFrom(targetPropertyAccess);
-				alreadyAccountedFor.Add(targetPropertyAccess);
 			}
 		}
 
@@ -273,35 +259,38 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 	/// <summary>
 	///     Translates NSubstitute argument matchers to their Mockolate equivalents anywhere inside the supplied
 	///     argument list. Currently handles <c>Arg.Any&lt;T&gt;</c>, <c>Arg.Is</c>, and the <c>Arg.Compat</c>
-	///     mirrors.
+	///     mirrors. Uses the semantic model so fully-qualified usages
+	///     (<c>NSubstitute.Arg.Any&lt;T&gt;()</c>, aliased imports, etc.) are recognised too.
 	/// </summary>
-	private static ArgumentListSyntax TransformNSubstituteArgReferences(ArgumentListSyntax args) =>
+	private static ArgumentListSyntax TransformNSubstituteArgReferences(ArgumentListSyntax args,
+		SemanticModel semanticModel, CancellationToken cancellationToken) =>
 		args.ReplaceNodes(
 			args.DescendantNodes().OfType<InvocationExpressionSyntax>()
-				.Where(IsNSubstituteArgCall)
+				.Where(invocation => IsNSubstituteArgCall(invocation, semanticModel, cancellationToken))
 				.ToArray(),
 			TransformNSubstituteArgInvocation);
 
-	private static bool IsNSubstituteArgCall(InvocationExpressionSyntax invocation)
+	private static bool IsNSubstituteArgCall(InvocationExpressionSyntax invocation,
+		SemanticModel semanticModel, CancellationToken cancellationToken)
 	{
-		// Direct: Arg.X<T>(...)
-		if (invocation.Expression is MemberAccessExpressionSyntax
-		    {
-			    Expression: IdentifierNameSyntax { Identifier.Text: "Arg", },
-		    })
+		if (semanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol is not IMethodSymbol methodSymbol)
 		{
-			return true;
+			return false;
 		}
 
-		// Compat: Arg.Compat.X<T>(...)
-		return invocation.Expression is MemberAccessExpressionSyntax
+		// Walk up nested types so both Arg.X(...) and Arg.Compat.X(...) resolve to NSubstitute.Arg.
+		for (INamedTypeSymbol? containingType = methodSymbol.ContainingType;
+		     containingType is not null;
+		     containingType = containingType.ContainingType)
 		{
-			Expression: MemberAccessExpressionSyntax
+			if (containingType.Name == "Arg" &&
+			    containingType.ContainingNamespace?.ToDisplayString() == "NSubstitute")
 			{
-				Expression: IdentifierNameSyntax { Identifier.Text: "Arg", },
-				Name.Identifier.Text: "Compat",
-			},
-		};
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	private static SyntaxNode TransformNSubstituteArgInvocation(InvocationExpressionSyntax original,
@@ -472,3 +461,6 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 		return "\n";
 	}
 }
+
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
+#pragma warning restore S1192

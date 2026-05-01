@@ -41,6 +41,39 @@ public partial class NSubstituteCodeFixProviderTests
 				""");
 
 		[Fact]
+		public async Task ArgCompat_IsRewrittenToItMatchers()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using NSubstitute;
+
+				public interface IFoo { int Sum(int x, int y); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = [|Substitute.For<IFoo>()|];
+						sub.Sum(Arg.Compat.Any<int>(), Arg.Compat.Is<int>(y => y > 0)).Returns(42);
+					}
+				}
+				""",
+				"""
+				using NSubstitute;
+				using Mockolate;
+
+				public interface IFoo { int Sum(int x, int y); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = IFoo.CreateMock();
+						sub.Mock.Setup.Sum(It.IsAny<int>(), It.Satisfies<int>(y => y > 0)).Returns(42);
+					}
+				}
+				""");
+
+		[Fact]
 		public async Task ArgIsPredicate_IsRewrittenToItSatisfies()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
