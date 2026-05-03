@@ -1,7 +1,7 @@
 # Mockolate.Migration
 
 [![Nuget](https://img.shields.io/nuget/v/Mockolate.Migration)](https://www.nuget.org/packages/Mockolate.Migration)
-[![Build](https://github.com/aweXpect/Mockolate.Migration/actions/workflows/build.yml/badge.svg)](https://github.com/aweXpect/Mockolate.Migration/actions/workflows/build.yml)
+[![Build](https://github.com/Testably/Mockolate.Migration/actions/workflows/build.yml/badge.svg)](https://github.com/Testably/Mockolate.Migration/actions/workflows/build.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Testably_Mockolate.Migration&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Testably_Mockolate.Migration)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Testably_Mockolate.Migration&metric=coverage)](https://sonarcloud.io/summary/overall?id=Testably_Mockolate.Migration)
 
