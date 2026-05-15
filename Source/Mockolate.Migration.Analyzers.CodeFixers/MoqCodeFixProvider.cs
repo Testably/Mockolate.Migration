@@ -523,7 +523,8 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 					mockAccess,
 					methodNameSyntax);
 				replacement = SyntaxFactory.InvocationExpression(methodAccess, transformedArgs)
-					.WithTriviaFrom(invocation);
+					.WithTriviaFrom(invocation)
+					.WithLeadingTrivia(BuildNestedMockTodoTrivia(invocation, navChain));
 			}
 
 			result[invocation] = replacement;
@@ -624,6 +625,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 			SimpleNameSyntax propertyNameSyntax = lambdaMemberAccess.Name;
 
 			MemberAccessExpressionSyntax replacement;
+			ExpressionSyntax? navChainForTodo = null;
 			if (navigationChain.Count == 0)
 			{
 				// Direct setup: mock.Mock.Setup.Property
@@ -664,9 +666,16 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 					SyntaxKind.SimpleMemberAccessExpression,
 					setupAccess,
 					propertyNameSyntax);
+				navChainForTodo = navChain;
 			}
 
-			result[invocation] = replacement.WithTriviaFrom(invocation);
+			MemberAccessExpressionSyntax withTrivia = replacement.WithTriviaFrom(invocation);
+			if (navChainForTodo is not null)
+			{
+				withTrivia = withTrivia.WithLeadingTrivia(BuildNestedMockTodoTrivia(invocation, navChainForTodo));
+			}
+
+			result[invocation] = withTrivia;
 		}
 
 		return result;
@@ -730,6 +739,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 			SimpleNameSyntax propertyNameSyntax = lambdaMemberAccess.Name;
 
 			ExpressionSyntax propertyAccess;
+			ExpressionSyntax? navChainForTodo = null;
 			if (navigationChain.Count == 0)
 			{
 				MemberAccessExpressionSyntax mockAccess = SyntaxFactory.MemberAccessExpression(
@@ -768,6 +778,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 					SyntaxKind.SimpleMemberAccessExpression,
 					setupAccess,
 					propertyNameSyntax);
+				navChainForTodo = navChain;
 			}
 
 			InvocationExpressionSyntax replacement;
@@ -793,6 +804,11 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 							SyntaxFactory.IdentifierName("Register")),
 						SyntaxFactory.ArgumentList())
 					.WithTriviaFrom(invocation);
+			}
+
+			if (navChainForTodo is not null)
+			{
+				replacement = replacement.WithLeadingTrivia(BuildNestedMockTodoTrivia(invocation, navChainForTodo));
 			}
 
 			result[invocation] = replacement;
@@ -836,6 +852,9 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 			// because Mockolate infers them during code generation.
 			// Reuse the original dot token to preserve leading trivia (e.g. newline + indent
 			// when .Callback is written on its own line).
+			// Only set trailing trivia from invocation — applying full WithTriviaFrom would
+			// clobber leading trivia on rebuiltReceiver's first token, which may carry a
+			// nested-mock TODO comment attached to the migrated setup.
 			InvocationExpressionSyntax replacement = SyntaxFactory.InvocationExpression(
 					SyntaxFactory.MemberAccessExpression(
 						SyntaxKind.SimpleMemberAccessExpression,
@@ -843,7 +862,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 						memberAccess.OperatorToken,
 						SyntaxFactory.IdentifierName("Do")),
 					invocation.ArgumentList)
-				.WithTriviaFrom(invocation);
+				.WithTrailingTrivia(invocation.GetTrailingTrivia());
 
 			result[invocation] = replacement;
 		}
@@ -955,6 +974,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 				methodParameterCount);
 
 			InvocationExpressionSyntax baseInvocation;
+			ExpressionSyntax? navChainForTodo = null;
 			if (navigationChain.Count == 0)
 			{
 				MemberAccessExpressionSyntax mockAccess = SyntaxFactory.MemberAccessExpression(
@@ -995,6 +1015,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 					verifyAccess,
 					methodNameSyntax);
 				baseInvocation = SyntaxFactory.InvocationExpression(methodAccess, transformedArgs);
+				navChainForTodo = navChain;
 			}
 
 			InvocationExpressionSyntax replacement;
@@ -1018,6 +1039,11 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 							SyntaxFactory.IdentifierName("AtLeastOnce")),
 						SyntaxFactory.ArgumentList())
 					.WithTriviaFrom(invocation);
+			}
+
+			if (navChainForTodo is not null)
+			{
+				replacement = replacement.WithLeadingTrivia(BuildNestedMockTodoTrivia(invocation, navChainForTodo));
 			}
 
 			result[invocation] = replacement;
@@ -1144,6 +1170,11 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 				? (ApplyTimesChain(baseInvocation, invocation.ArgumentList.Arguments[1].Expression) ?? atLeastOnceFallback)
 				.WithTriviaFrom(invocation)
 				: atLeastOnceFallback.WithTriviaFrom(invocation);
+
+			if (navigationChain.Count > 0)
+			{
+				replacement = replacement.WithLeadingTrivia(BuildNestedMockTodoTrivia(invocation, receiver));
+			}
 
 			result[invocation] = replacement;
 		}
@@ -1278,6 +1309,11 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 				? (ApplyTimesChain(baseInvocation, invocation.ArgumentList.Arguments[1].Expression) ?? atLeastOnceFallback)
 				.WithTriviaFrom(invocation)
 				: atLeastOnceFallback.WithTriviaFrom(invocation);
+
+			if (navigationChain.Count > 0)
+			{
+				replacement = replacement.WithLeadingTrivia(BuildNestedMockTodoTrivia(invocation, receiver));
+			}
 
 			result[invocation] = replacement;
 		}
@@ -1795,6 +1831,24 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 
 		return SyntaxFactory.UsingDirective(name);
 	}
+
+	private static SyntaxTriviaList BuildNestedMockTodoTrivia(SyntaxNode anchor, ExpressionSyntax navigationRoot)
+	{
+		SyntaxTriviaList existing = anchor.GetLeadingTrivia();
+		SyntaxTrivia indent = existing.LastOrDefault(t => t.IsKind(SyntaxKind.WhitespaceTrivia));
+		string endOfLine = DetectLineEnding(anchor.SyntaxTree.GetRoot());
+		return existing
+			.Add(SyntaxFactory.Comment(
+				$"// TODO(MockolateM001): register the nested '{navigationRoot}' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)"))
+			.Add(SyntaxFactory.EndOfLine(endOfLine))
+			.Add(indent);
+	}
+
+	private static string DetectLineEnding(SyntaxNode root) =>
+		root.DescendantTrivia(descendIntoTrivia: true)
+			.Where(t => t.IsKind(SyntaxKind.EndOfLineTrivia))
+			.Select(t => t.ToFullString())
+			.FirstOrDefault(s => s.Length > 0) ?? "\n";
 
 	private static TypeSyntax? GetTypeArgumentFromSemanticModel(
 		SemanticModel? semanticModel,

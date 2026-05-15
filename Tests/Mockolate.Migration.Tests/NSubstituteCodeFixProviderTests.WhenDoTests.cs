@@ -105,7 +105,7 @@ public partial class NSubstituteCodeFixProviderTests
 					public void Test()
 					{
 						var sub = IFoo.CreateMock();
-						// TODO: review CallInfo usage manually — Mockolate's Do/Returns take typed parameters, not CallInfo
+						// TODO(MockolateM002): review CallInfo usage manually — Mockolate's Do/Returns take typed parameters, not CallInfo
 						sub.Mock.Setup.Bar(1).Do(call => Console.WriteLine(call));
 					}
 				}

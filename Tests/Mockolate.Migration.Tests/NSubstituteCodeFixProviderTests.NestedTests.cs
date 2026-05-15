@@ -37,7 +37,7 @@ public partial class NSubstituteCodeFixProviderTests
 					public void Test()
 					{
 						var sub = IFoo.CreateMock();
-						// TODO: register the nested 'sub.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
+						// TODO(MockolateM002): register the nested 'sub.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
 						sub.Child.Mock.Setup.Compute(1).Returns(42);
 					}
 				}
@@ -73,8 +73,82 @@ public partial class NSubstituteCodeFixProviderTests
 					public void Test()
 					{
 						var sub = IFoo.CreateMock();
-						// TODO: register the nested 'sub.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
+						// TODO(MockolateM002): register the nested 'sub.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
 						sub.Child.Mock.Setup.Name.Returns("baz");
+					}
+				}
+				""");
+
+		[Fact]
+		public async Task NestedReceivedProperty_Got_RewritesAndAddsTodo()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using NSubstitute;
+
+				public interface IBar { string Name { get; } }
+				public interface IFoo { IBar Child { get; } }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = [|Substitute.For<IFoo>()|];
+						_ = sub.Child.Received(2).Name;
+					}
+				}
+				""",
+				"""
+				using NSubstitute;
+				using Mockolate;
+				using Mockolate.Verify;
+
+				public interface IBar { string Name { get; } }
+				public interface IFoo { IBar Child { get; } }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = IFoo.CreateMock();
+						// TODO(MockolateM002): register the nested 'sub.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
+						sub.Child.Mock.Verify.Name.Got().Exactly(2);
+					}
+				}
+				""");
+
+		[Fact]
+		public async Task NestedReceivedProperty_Set_RewritesAndAddsTodo()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using NSubstitute;
+
+				public interface IBar { string Name { get; set; } }
+				public interface IFoo { IBar Child { get; } }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = [|Substitute.For<IFoo>()|];
+						sub.Child.Received(2).Name = "baz";
+					}
+				}
+				""",
+				"""
+				using NSubstitute;
+				using Mockolate;
+				using Mockolate.Verify;
+
+				public interface IBar { string Name { get; set; } }
+				public interface IFoo { IBar Child { get; } }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = IFoo.CreateMock();
+						// TODO(MockolateM002): register the nested 'sub.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
+						sub.Child.Mock.Verify.Name.Set("baz").Exactly(2);
 					}
 				}
 				""");
@@ -110,7 +184,46 @@ public partial class NSubstituteCodeFixProviderTests
 					public void Test()
 					{
 						var sub = IFoo.CreateMock();
+						// TODO(MockolateM002): register the nested 'sub.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
 						sub.Child.Mock.Verify.Compute(1).Exactly(2);
+					}
+				}
+				""");
+
+		[Fact]
+		public async Task NestedRaiseEvent_RewritesAndAddsTodo()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using System;
+				using NSubstitute;
+
+				public interface IBar { event EventHandler MyEvent; }
+				public interface IFoo { IBar Child { get; } }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = [|Substitute.For<IFoo>()|];
+						sub.Child.MyEvent += Raise.EventWith(EventArgs.Empty);
+					}
+				}
+				""",
+				"""
+				using System;
+				using NSubstitute;
+				using Mockolate;
+
+				public interface IBar { event EventHandler MyEvent; }
+				public interface IFoo { IBar Child { get; } }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = IFoo.CreateMock();
+						// TODO(MockolateM002): register the nested 'sub.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
+						sub.Child.Mock.Raise.MyEvent(null, EventArgs.Empty);
 					}
 				}
 				""");
