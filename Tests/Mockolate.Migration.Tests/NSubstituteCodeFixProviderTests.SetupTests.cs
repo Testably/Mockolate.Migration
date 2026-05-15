@@ -507,6 +507,41 @@ public partial class NSubstituteCodeFixProviderTests
 				""");
 
 		[Fact]
+		public async Task ReturnsNull_PreservesConfiguratorName()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using NSubstitute;
+				using NSubstitute.ReturnsExtensions;
+
+				public interface IFoo { string Bar(int x); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = [|Substitute.For<IFoo>()|];
+						sub.Bar(1).ReturnsNull();
+					}
+				}
+				""",
+				"""
+				using NSubstitute;
+				using NSubstitute.ReturnsExtensions;
+				using Mockolate;
+
+				public interface IFoo { string Bar(int x); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = IFoo.CreateMock();
+						sub.Mock.Setup.Bar(1).ReturnsNull();
+					}
+				}
+				""");
+
+		[Fact]
 		public async Task SequentialPropertyReturns_AreSplitIntoChain()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -568,6 +603,45 @@ public partial class NSubstituteCodeFixProviderTests
 					{
 						var sub = IFoo.CreateMock();
 						sub.Mock.Setup.Bar(1).Returns(1).Returns(2).Returns(3);
+					}
+				}
+				""");
+
+		[Fact]
+		public async Task ThrowsAsync_PreservesConfiguratorName()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using System;
+				using System.Threading.Tasks;
+				using NSubstitute;
+				using NSubstitute.ExceptionExtensions;
+
+				public interface IFoo { Task<int> BarAsync(int x); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = [|Substitute.For<IFoo>()|];
+						sub.BarAsync(1).ThrowsAsync(new InvalidOperationException());
+					}
+				}
+				""",
+				"""
+				using System;
+				using System.Threading.Tasks;
+				using NSubstitute;
+				using NSubstitute.ExceptionExtensions;
+				using Mockolate;
+
+				public interface IFoo { Task<int> BarAsync(int x); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = IFoo.CreateMock();
+						sub.Mock.Setup.BarAsync(1).ThrowsAsync(new InvalidOperationException());
 					}
 				}
 				""");

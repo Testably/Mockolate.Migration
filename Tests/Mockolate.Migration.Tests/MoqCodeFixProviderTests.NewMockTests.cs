@@ -8,6 +8,31 @@ public partial class MoqCodeFixProviderTests
 	public sealed class NewMockTests
 	{
 		[Fact]
+		public async Task AsPropertyInitializer_IsReplaced()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using Moq;
+
+				public interface IFoo { }
+
+				public class Tests
+				{
+					public Mock<IFoo> MockProperty { get; } = [|new Mock<IFoo>()|];
+				}
+				""",
+				"""
+				using Moq;
+				using Mockolate;
+
+				public interface IFoo { }
+
+				public class Tests
+				{
+					public IFoo MockProperty { get; } = IFoo.CreateMock();
+				}
+				""");
+
+		[Fact]
 		public async Task IsReplaced()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""

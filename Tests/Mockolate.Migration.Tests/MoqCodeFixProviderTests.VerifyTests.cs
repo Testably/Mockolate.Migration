@@ -42,6 +42,42 @@ public partial class MoqCodeFixProviderTests
 				""");
 
 		[Fact]
+		public async Task NestedMethod_MigratesViaNavigationChain()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using Moq;
+
+				public interface IBar { int Compute(int x); }
+				public interface IFoo { IBar Child { get; } }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = [|new Mock<IFoo>()|];
+						mock.Verify(m => m.Child.Compute(It.IsAny<int>()), Times.Once());
+					}
+				}
+				""",
+				"""
+				using Moq;
+				using Mockolate;
+				using Mockolate.Verify;
+
+				public interface IBar { int Compute(int x); }
+				public interface IFoo { IBar Child { get; } }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = IFoo.CreateMock();
+						mock.Child.Mock.Verify.Compute(It.IsAny<int>()).Once();
+					}
+				}
+				""");
+
+		[Fact]
 		public async Task WithNoTimes_MigratesVerifyToAtLeastOnce()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -105,6 +141,40 @@ public partial class MoqCodeFixProviderTests
 					{
 						var mock = IFoo.CreateMock();
 						mock.Mock.Verify.Bar(It.IsAny<string>()).Between(4, 4);
+					}
+				}
+				""");
+
+		[Fact]
+		public async Task WithTimesBetweenExclusive_NonLiteralBounds_AdjustsBoundsUsingAddSubtract()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using Moq;
+
+				public interface IFoo { bool Bar(string x); }
+
+				public class Tests
+				{
+					public void Test(int low, int high)
+					{
+						var mock = [|new Mock<IFoo>()|];
+						mock.Verify(m => m.Bar(It.IsAny<string>()), Times.Between(low, high, Range.Exclusive));
+					}
+				}
+				""",
+				"""
+				using Moq;
+				using Mockolate;
+				using Mockolate.Verify;
+
+				public interface IFoo { bool Bar(string x); }
+
+				public class Tests
+				{
+					public void Test(int low, int high)
+					{
+						var mock = IFoo.CreateMock();
+						mock.Mock.Verify.Bar(It.IsAny<string>()).Between(low + 1, high - 1);
 					}
 				}
 				""");

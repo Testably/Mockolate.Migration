@@ -25,6 +25,24 @@ public class NSubstituteAnalyzerTests
 				.WithLocation(0));
 
 	[Fact]
+	public async Task SubstituteFor_ChainedMethodCall_FlagsOuterExpression()
+		=> await Verifier.VerifyAnalyzerAsync("""
+		                                      using NSubstitute;
+
+		                                      public interface IFoo { int Bar(); }
+
+		                                      public class Tests
+		                                      {
+		                                      	public void Test()
+		                                      	{
+		                                      		var value = {|#0:Substitute.For<IFoo>().Bar()|};
+		                                      	}
+		                                      }
+		                                      """,
+			Verifier.Diagnostic(Rules.NSubstituteRule)
+				.WithLocation(0));
+
+	[Fact]
 	public async Task SubstituteFor_IsFlagged()
 		=> await Verifier.VerifyAnalyzerAsync("""
 		                                      using NSubstitute;

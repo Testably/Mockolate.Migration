@@ -76,6 +76,42 @@ public partial class NSubstituteCodeFixProviderTests
 				""");
 
 		[Fact]
+		public async Task WhenMethod_DoWithBareCallInfoReference_AddsTodoComment()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using System;
+				using NSubstitute;
+
+				public interface IFoo { void Bar(int x); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = [|Substitute.For<IFoo>()|];
+						sub.When(x => x.Bar(1)).Do(call => Console.WriteLine(call));
+					}
+				}
+				""",
+				"""
+				using System;
+				using NSubstitute;
+				using Mockolate;
+
+				public interface IFoo { void Bar(int x); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = IFoo.CreateMock();
+						// TODO: review CallInfo usage manually — Mockolate's Do/Returns take typed parameters, not CallInfo
+						sub.Mock.Setup.Bar(1).Do(call => Console.WriteLine(call));
+					}
+				}
+				""");
+
+		[Fact]
 		public async Task WhenMethod_WithArgMatcher_TransformsMatcher()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""

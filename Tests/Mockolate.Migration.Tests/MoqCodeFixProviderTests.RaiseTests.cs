@@ -8,6 +8,43 @@ public partial class MoqCodeFixProviderTests
 	public sealed class RaiseTests
 	{
 		[Fact]
+		public async Task WithDerivedEventArgs_PrependsNullSender()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using Moq;
+				using System;
+
+				public class MyEventArgs : EventArgs { public int Value; }
+				public interface IFoo { event EventHandler<MyEventArgs> MyEvent; }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = [|new Mock<IFoo>()|];
+						mock.Raise(m => m.MyEvent += null, new MyEventArgs());
+					}
+				}
+				""",
+				"""
+				using Moq;
+				using System;
+				using Mockolate;
+
+				public class MyEventArgs : EventArgs { public int Value; }
+				public interface IFoo { event EventHandler<MyEventArgs> MyEvent; }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = IFoo.CreateMock();
+						mock.Mock.Raise.MyEvent(null, new MyEventArgs());
+					}
+				}
+				""");
+
+		[Fact]
 		public async Task WithEventArgs_PrependsNullSender()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -73,6 +110,41 @@ public partial class MoqCodeFixProviderTests
 					{
 						var mock = IFoo.CreateMock();
 						mock.Mock.Raise.MyEvent("foo", 3);
+					}
+				}
+				""");
+
+		[Fact]
+		public async Task WithSingleNonEventArgsValue_DoesNotPrependSender()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using Moq;
+				using System;
+
+				public interface IFoo { event Action<int> MyEvent; }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = [|new Mock<IFoo>()|];
+						mock.Raise(m => m.MyEvent += null, 42);
+					}
+				}
+				""",
+				"""
+				using Moq;
+				using System;
+				using Mockolate;
+
+				public interface IFoo { event Action<int> MyEvent; }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = IFoo.CreateMock();
+						mock.Mock.Raise.MyEvent(42);
 					}
 				}
 				""");
