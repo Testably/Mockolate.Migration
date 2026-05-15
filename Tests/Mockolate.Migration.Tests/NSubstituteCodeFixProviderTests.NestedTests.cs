@@ -78,5 +78,41 @@ public partial class NSubstituteCodeFixProviderTests
 					}
 				}
 				""");
+
+		[Fact]
+		public async Task NestedReceivedMethod_RewritesToVerifyOnNestedMock()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using NSubstitute;
+
+				public interface IBar { int Compute(int x); }
+				public interface IFoo { IBar Child { get; } }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = [|Substitute.For<IFoo>()|];
+						sub.Child.Received(2).Compute(1);
+					}
+				}
+				""",
+				"""
+				using NSubstitute;
+				using Mockolate;
+				using Mockolate.Verify;
+
+				public interface IBar { int Compute(int x); }
+				public interface IFoo { IBar Child { get; } }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = IFoo.CreateMock();
+						sub.Child.Mock.Verify.Compute(1).Exactly(2);
+					}
+				}
+				""");
 	}
 }
