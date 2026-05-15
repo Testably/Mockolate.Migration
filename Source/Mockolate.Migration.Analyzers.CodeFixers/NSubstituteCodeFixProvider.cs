@@ -431,23 +431,23 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 	///     Either flag may be inactive; if neither is active, the replacement is returned untouched.
 	/// </summary>
 	private static InvocationExpressionSyntax ApplySetupTrivia(InvocationExpressionSyntax replacement,
-		InvocationExpressionSyntax outerInvocation, ExpressionSyntax? nestedNavigationRoot, bool callInfoTodoNeeded)
+		SyntaxNode anchor, ExpressionSyntax? nestedNavigationRoot, bool callInfoTodoNeeded)
 	{
 		if (nestedNavigationRoot is null && !callInfoTodoNeeded)
 		{
 			return replacement;
 		}
 
-		SyntaxTriviaList trivia = outerInvocation.GetLeadingTrivia();
+		SyntaxTriviaList trivia = anchor.GetLeadingTrivia();
 		if (nestedNavigationRoot is not null)
 		{
-			trivia = AppendTodoComment(trivia, outerInvocation,
+			trivia = AppendTodoComment(trivia, anchor,
 				$"// TODO: register the nested '{nestedNavigationRoot}' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)");
 		}
 
 		if (callInfoTodoNeeded)
 		{
-			trivia = AppendTodoComment(trivia, outerInvocation,
+			trivia = AppendTodoComment(trivia, anchor,
 				"// TODO: review CallInfo usage manually — Mockolate's Do/Returns take typed parameters, not CallInfo");
 		}
 
@@ -823,8 +823,14 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 				raiseMember,
 				eventAccess.Name.WithoutTrivia());
 
-			result[assignment] = SyntaxFactory.InvocationExpression(raiseEventName, raiseArgs)
+			InvocationExpressionSyntax raiseReplacement = SyntaxFactory.InvocationExpression(raiseEventName, raiseArgs)
 				.WithTriviaFrom(assignment);
+			if (eventAccess.Expression is MemberAccessExpressionSyntax nestedEventReceiver)
+			{
+				raiseReplacement = ApplySetupTrivia(raiseReplacement, assignment, nestedEventReceiver, callInfoTodoNeeded: false);
+			}
+
+			result[assignment] = raiseReplacement;
 		}
 
 		return result;
@@ -973,9 +979,15 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 			if (assignment.Left is IdentifierNameSyntax { Identifier.Text: "_", } &&
 			    TryExtractReceivedPropertyAccess(assignment.Right, semanticModel, mockSymbol, cancellationToken) is { } got)
 			{
-				result[assignment] = BuildPropertyVerifyChain(got.MockReceiver, got.PropertyName, "Got",
+				InvocationExpressionSyntax gotChain = BuildPropertyVerifyChain(got.MockReceiver, got.PropertyName, "Got",
 						SyntaxFactory.ArgumentList(), got.ReceivedMethod, got.ReceivedArgs)
 					.WithTriviaFrom(assignment);
+				if (got.MockReceiver is MemberAccessExpressionSyntax gotNestedReceiver)
+				{
+					gotChain = ApplySetupTrivia(gotChain, assignment, gotNestedReceiver, callInfoTodoNeeded: false);
+				}
+
+				result[assignment] = gotChain;
 				continue;
 			}
 
@@ -985,9 +997,15 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 				ArgumentListSyntax setArgs = BuildPropertyVerifySetArgs(
 					assignment.Right, semanticModel, cancellationToken);
 
-				result[assignment] = BuildPropertyVerifyChain(set.MockReceiver, set.PropertyName, "Set",
+				InvocationExpressionSyntax setChain = BuildPropertyVerifyChain(set.MockReceiver, set.PropertyName, "Set",
 						setArgs, set.ReceivedMethod, set.ReceivedArgs)
 					.WithTriviaFrom(assignment);
+				if (set.MockReceiver is MemberAccessExpressionSyntax setNestedReceiver)
+				{
+					setChain = ApplySetupTrivia(setChain, assignment, setNestedReceiver, callInfoTodoNeeded: false);
+				}
+
+				result[assignment] = setChain;
 			}
 		}
 
@@ -1130,7 +1148,13 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 			bool isNegative = receivedMethod is "DidNotReceive" or "DidNotReceiveWithAnyArgs";
 			InvocationExpressionSyntax suffix = BuildVerifySuffix(verifyTarget, isNegative, receiverCall.ArgumentList);
 
-			result[outerInvocation] = suffix.WithTriviaFrom(outerInvocation);
+			InvocationExpressionSyntax replacement = suffix.WithTriviaFrom(outerInvocation);
+			if (mockReceiver is MemberAccessExpressionSyntax nestedReceiver)
+			{
+				replacement = ApplySetupTrivia(replacement, outerInvocation, nestedReceiver, callInfoTodoNeeded: false);
+			}
+
+			result[outerInvocation] = replacement;
 		}
 
 		return result;
