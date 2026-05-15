@@ -558,7 +558,7 @@ public partial class MoqCodeFixProviderTests
 					public void Test()
 					{
 						var mock = IFoo.CreateMock();
-						// TODO: register the nested 'mock.Bar.Baz' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
+						// TODO(MockolateM001): register the nested 'mock.Bar.Baz' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
 						mock.Bar.Baz.Mock.Setup.Name.Returns("baz");
 					}
 				}
@@ -594,7 +594,7 @@ public partial class MoqCodeFixProviderTests
 					public void Test()
 					{
 						var mock = IFoo.CreateMock();
-						// TODO: register the nested 'mock.Bar' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
+						// TODO(MockolateM001): register the nested 'mock.Bar' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
 						mock.Bar.Mock.Setup.Name.InitializeWith("value");
 					}
 				}
@@ -630,7 +630,7 @@ public partial class MoqCodeFixProviderTests
 					public void Test()
 					{
 						var mock = IFoo.CreateMock();
-						// TODO: register the nested 'mock.Bar' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
+						// TODO(MockolateM001): register the nested 'mock.Bar' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
 						mock.Bar.Mock.Setup.Name.Register();
 					}
 				}
@@ -810,7 +810,7 @@ public partial class MoqCodeFixProviderTests
 					public void Test()
 					{
 						var mock = IFoo.CreateMock();
-						// TODO: register the nested 'mock.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
+						// TODO(MockolateM001): register the nested 'mock.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
 						mock.Child.Mock.GetCount()
 							.Returns(1)
 							.Throws<InvalidOperationException>();

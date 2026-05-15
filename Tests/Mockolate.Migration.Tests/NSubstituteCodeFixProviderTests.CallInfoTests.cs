@@ -39,7 +39,7 @@ public partial class NSubstituteCodeFixProviderTests
 						public void Test()
 						{
 							var sub = IFoo.CreateMock();
-							// TODO: review CallInfo usage manually — Mockolate's Do/Returns take typed parameters, not CallInfo
+							// TODO(MockolateM002): review CallInfo usage manually — Mockolate's Do/Returns take typed parameters, not CallInfo
 							sub.Mock.Setup.Bar(0, 0).Returns(0).Do(call => Console.WriteLine(call.Arg<int>()));
 						}
 					}
@@ -73,7 +73,7 @@ public partial class NSubstituteCodeFixProviderTests
 						public void Test()
 						{
 							var sub = IFoo.CreateMock();
-							// TODO: review CallInfo usage manually — Mockolate's Do/Returns take typed parameters, not CallInfo
+							// TODO(MockolateM002): review CallInfo usage manually — Mockolate's Do/Returns take typed parameters, not CallInfo
 							sub.Mock.Setup.TryGet("k", out _).Returns(true).Do(call => { call[1] = 42; });
 						}
 					}
@@ -393,7 +393,7 @@ public partial class NSubstituteCodeFixProviderTests
 						public void Test()
 						{
 							var sub = IFoo.CreateMock();
-							// TODO: review CallInfo usage manually — Mockolate's Do/Returns take typed parameters, not CallInfo
+							// TODO(MockolateM002): review CallInfo usage manually — Mockolate's Do/Returns take typed parameters, not CallInfo
 							sub.Mock.Setup.Bar(0).Returns(call => Helper(call));
 						}
 					}
@@ -431,7 +431,7 @@ public partial class NSubstituteCodeFixProviderTests
 						public void Test()
 						{
 							var sub = IFoo.CreateMock();
-							// TODO: review CallInfo usage manually — Mockolate's Do/Returns take typed parameters, not CallInfo
+							// TODO(MockolateM002): review CallInfo usage manually — Mockolate's Do/Returns take typed parameters, not CallInfo
 							sub.Mock.Setup.Bar(0).Returns(call =>
 							{
 								foreach (var x in new[] { 1, 2 }) { _ = x; }
@@ -474,7 +474,7 @@ public partial class NSubstituteCodeFixProviderTests
 						public void Test()
 						{
 							var sub = IFoo.CreateMock();
-							// TODO: review CallInfo usage manually — Mockolate's Do/Returns take typed parameters, not CallInfo
+							// TODO(MockolateM002): review CallInfo usage manually — Mockolate's Do/Returns take typed parameters, not CallInfo
 							sub.Mock.Setup.Dispense("Dark", 1).Returns(call =>
 							{
 								string type = call.Arg<string>();
@@ -519,7 +519,7 @@ public partial class NSubstituteCodeFixProviderTests
 						public void Test()
 						{
 							var sub = IFoo.CreateMock();
-							// TODO: review CallInfo usage manually — Mockolate's Do/Returns take typed parameters, not CallInfo
+							// TODO(MockolateM002): review CallInfo usage manually — Mockolate's Do/Returns take typed parameters, not CallInfo
 							sub.Mock.Setup.Bar(0).Returns(call =>
 							{
 								Action<int> a = (x) => Console.WriteLine(x);

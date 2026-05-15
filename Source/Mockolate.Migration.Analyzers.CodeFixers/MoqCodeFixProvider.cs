@@ -1839,7 +1839,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		string endOfLine = DetectLineEnding(anchor.SyntaxTree.GetRoot());
 		return existing
 			.Add(SyntaxFactory.Comment(
-				$"// TODO: register the nested '{navigationRoot}' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)"))
+				$"// TODO(MockolateM001): register the nested '{navigationRoot}' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)"))
 			.Add(SyntaxFactory.EndOfLine(endOfLine))
 			.Add(indent);
 	}

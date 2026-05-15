@@ -442,13 +442,13 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 		if (nestedNavigationRoot is not null)
 		{
 			trivia = AppendTodoComment(trivia, anchor,
-				$"// TODO: register the nested '{nestedNavigationRoot}' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)");
+				$"// TODO(MockolateM002): register the nested '{nestedNavigationRoot}' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)");
 		}
 
 		if (callInfoTodoNeeded)
 		{
 			trivia = AppendTodoComment(trivia, anchor,
-				"// TODO: review CallInfo usage manually — Mockolate's Do/Returns take typed parameters, not CallInfo");
+				"// TODO(MockolateM002): review CallInfo usage manually — Mockolate's Do/Returns take typed parameters, not CallInfo");
 		}
 
 		return replacement.WithLeadingTrivia(trivia);
@@ -475,7 +475,7 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 	/// </summary>
 	private static SyntaxTriviaList BuildCallInfoTodoTrivia(SyntaxNode anchor) =>
 		AppendTodoComment(anchor.GetLeadingTrivia(), anchor,
-			"// TODO: review CallInfo usage manually — Mockolate's Do/Returns take typed parameters, not CallInfo");
+			"// TODO(MockolateM002): review CallInfo usage manually — Mockolate's Do/Returns take typed parameters, not CallInfo");
 
 	private static SyntaxTriviaList AppendTodoComment(SyntaxTriviaList existingLeading, SyntaxNode anchor,
 		string commentText)

@@ -37,7 +37,7 @@ public partial class NSubstituteCodeFixProviderTests
 					public void Test()
 					{
 						var sub = IFoo.CreateMock();
-						// TODO: register the nested 'sub.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
+						// TODO(MockolateM002): register the nested 'sub.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
 						sub.Child.Mock.Setup.Compute(1).Returns(42);
 					}
 				}
@@ -73,7 +73,7 @@ public partial class NSubstituteCodeFixProviderTests
 					public void Test()
 					{
 						var sub = IFoo.CreateMock();
-						// TODO: register the nested 'sub.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
+						// TODO(MockolateM002): register the nested 'sub.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
 						sub.Child.Mock.Setup.Name.Returns("baz");
 					}
 				}
@@ -110,7 +110,7 @@ public partial class NSubstituteCodeFixProviderTests
 					public void Test()
 					{
 						var sub = IFoo.CreateMock();
-						// TODO: register the nested 'sub.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
+						// TODO(MockolateM002): register the nested 'sub.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
 						sub.Child.Mock.Verify.Name.Got().Exactly(2);
 					}
 				}
@@ -147,7 +147,7 @@ public partial class NSubstituteCodeFixProviderTests
 					public void Test()
 					{
 						var sub = IFoo.CreateMock();
-						// TODO: register the nested 'sub.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
+						// TODO(MockolateM002): register the nested 'sub.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
 						sub.Child.Mock.Verify.Name.Set("baz").Exactly(2);
 					}
 				}
@@ -184,7 +184,7 @@ public partial class NSubstituteCodeFixProviderTests
 					public void Test()
 					{
 						var sub = IFoo.CreateMock();
-						// TODO: register the nested 'sub.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
+						// TODO(MockolateM002): register the nested 'sub.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
 						sub.Child.Mock.Verify.Compute(1).Exactly(2);
 					}
 				}
@@ -222,7 +222,7 @@ public partial class NSubstituteCodeFixProviderTests
 					public void Test()
 					{
 						var sub = IFoo.CreateMock();
-						// TODO: register the nested 'sub.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
+						// TODO(MockolateM002): register the nested 'sub.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
 						sub.Child.Mock.Raise.MyEvent(null, EventArgs.Empty);
 					}
 				}
