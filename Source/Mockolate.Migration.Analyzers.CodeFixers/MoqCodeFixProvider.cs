@@ -1844,22 +1844,11 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 			.Add(indent);
 	}
 
-	private static string DetectLineEnding(SyntaxNode root)
-	{
-		foreach (SyntaxTrivia trivia in root.DescendantTrivia(descendIntoTrivia: true))
-		{
-			if (trivia.IsKind(SyntaxKind.EndOfLineTrivia))
-			{
-				string text = trivia.ToFullString();
-				if (text.Length > 0)
-				{
-					return text;
-				}
-			}
-		}
-
-		return "\n";
-	}
+	private static string DetectLineEnding(SyntaxNode root) =>
+		root.DescendantTrivia(descendIntoTrivia: true)
+			.Where(t => t.IsKind(SyntaxKind.EndOfLineTrivia))
+			.Select(t => t.ToFullString())
+			.FirstOrDefault(s => s.Length > 0) ?? "\n";
 
 	private static TypeSyntax? GetTypeArgumentFromSemanticModel(
 		SemanticModel? semanticModel,

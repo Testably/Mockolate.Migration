@@ -318,7 +318,7 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 
 				if (outerReplacement is not null)
 				{
-					outerReplacement = ApplySetupTrivia(outerReplacement, outerInvocation,
+					outerReplacement = ApplyTodoTrivia(outerReplacement, outerInvocation,
 						isNested ? targetMemberAccess.Expression : null, callInfoTodoNeeded);
 					result[outerInvocation] = outerReplacement;
 				}
@@ -363,7 +363,7 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 
 				if (outerPropertyReplacement is not null)
 				{
-					outerPropertyReplacement = ApplySetupTrivia(outerPropertyReplacement, outerInvocation,
+					outerPropertyReplacement = ApplyTodoTrivia(outerPropertyReplacement, outerInvocation,
 						isNestedProperty ? targetPropertyAccess.Expression : null, propertyCallInfoTodoNeeded);
 					result[outerInvocation] = outerPropertyReplacement;
 				}
@@ -427,10 +427,12 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 	}
 
 	/// <summary>
-	///     Combines the nested-mock and CallInfo TODO comments onto a single setup replacement when both apply.
-	///     Either flag may be inactive; if neither is active, the replacement is returned untouched.
+	///     Layers the nested-mock and/or CallInfo TODO comments onto a migrated replacement. Called from
+	///     every rewrite path that can produce these TODOs — setup-call, setup-property, method verify,
+	///     property verify, and event raise. Either flag may be inactive; if neither is active, the
+	///     replacement is returned untouched.
 	/// </summary>
-	private static InvocationExpressionSyntax ApplySetupTrivia(InvocationExpressionSyntax replacement,
+	private static InvocationExpressionSyntax ApplyTodoTrivia(InvocationExpressionSyntax replacement,
 		SyntaxNode anchor, ExpressionSyntax? nestedNavigationRoot, bool callInfoTodoNeeded)
 	{
 		if (nestedNavigationRoot is null && !callInfoTodoNeeded)
@@ -827,7 +829,7 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 				.WithTriviaFrom(assignment);
 			if (eventAccess.Expression is MemberAccessExpressionSyntax nestedEventReceiver)
 			{
-				raiseReplacement = ApplySetupTrivia(raiseReplacement, assignment, nestedEventReceiver, callInfoTodoNeeded: false);
+				raiseReplacement = ApplyTodoTrivia(raiseReplacement, assignment, nestedEventReceiver, callInfoTodoNeeded: false);
 			}
 
 			result[assignment] = raiseReplacement;
@@ -984,7 +986,7 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 					.WithTriviaFrom(assignment);
 				if (got.MockReceiver is MemberAccessExpressionSyntax gotNestedReceiver)
 				{
-					gotChain = ApplySetupTrivia(gotChain, assignment, gotNestedReceiver, callInfoTodoNeeded: false);
+					gotChain = ApplyTodoTrivia(gotChain, assignment, gotNestedReceiver, callInfoTodoNeeded: false);
 				}
 
 				result[assignment] = gotChain;
@@ -1002,7 +1004,7 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 					.WithTriviaFrom(assignment);
 				if (set.MockReceiver is MemberAccessExpressionSyntax setNestedReceiver)
 				{
-					setChain = ApplySetupTrivia(setChain, assignment, setNestedReceiver, callInfoTodoNeeded: false);
+					setChain = ApplyTodoTrivia(setChain, assignment, setNestedReceiver, callInfoTodoNeeded: false);
 				}
 
 				result[assignment] = setChain;
@@ -1151,7 +1153,7 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 			InvocationExpressionSyntax replacement = suffix.WithTriviaFrom(outerInvocation);
 			if (mockReceiver is MemberAccessExpressionSyntax nestedReceiver)
 			{
-				replacement = ApplySetupTrivia(replacement, outerInvocation, nestedReceiver, callInfoTodoNeeded: false);
+				replacement = ApplyTodoTrivia(replacement, outerInvocation, nestedReceiver, callInfoTodoNeeded: false);
 			}
 
 			result[outerInvocation] = replacement;
