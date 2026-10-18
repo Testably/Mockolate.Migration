@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using Fallout.Common;
@@ -68,6 +69,7 @@ partial class Build
 				foreach (string package in
 				         Directory.EnumerateFiles(project.Directory / "bin", "*.nupkg", SearchOption.AllDirectories))
 				{
+					AssertContainsAnalyzers(package);
 					File.Move(package, packagesDirectory / Path.GetFileName(package));
 					Debug("Found nuget package: {PackagePath}", package);
 					packages.Add(Path.GetFileName(package));
@@ -84,4 +86,14 @@ partial class Build
 			ReportSummary(s => s
 				.AddPair("Packages", string.Join(", ", packages)));
 		});
+
+	static void AssertContainsAnalyzers(string package)
+	{
+		using ZipArchive archive = ZipFile.OpenRead(package);
+		if (!archive.Entries.Any(entry => entry.FullName.StartsWith("analyzers/dotnet/cs/") &&
+		                                  entry.FullName.EndsWith(".dll")))
+		{
+			Assert.Fail($"The package '{Path.GetFileName(package)}' contains no analyzer in 'analyzers/dotnet/cs'");
+		}
+	}
 }

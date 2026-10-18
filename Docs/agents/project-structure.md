@@ -6,7 +6,7 @@ Product code lives in `Source/`, tests and playgrounds in `Tests/`, the build pi
 |---|---|
 | `Source/Mockolate.Migration.Analyzers` | `MoqAnalyzer` and `NSubstituteAnalyzer`, the diagnostic descriptors in `Rules.cs`, the texts in `Resources.resx` and the release tracking files `AnalyzerReleases.*.md`. |
 | `Source/Mockolate.Migration.Analyzers.CodeFixers` | `MoqCodeFixProvider` and `NSubstituteCodeFixProvider` on top of the shared base `AssertionCodeFixProvider`. Uses the root namespace `Mockolate.Migration.Analyzers`. |
-| `Source/Mockolate.Migration` | The packable project. `Pack` collects the `.nupkg` and `.snupkg` from its `bin` folder. |
+| `Source/Mockolate.Migration` | The packable project. It packs the analyzer and code fixer assemblies into `analyzers/dotnet/cs`; `Pack` collects the `.nupkg` and `.snupkg` from its `bin` folder. |
 | `Tests/Mockolate.Migration.Tests` | Analyzer and code fix tests, plus the verifier helpers in `Verifiers/`. |
 | `Tests/Mockolate.Migration.MoqPlayground` | Realistic Moq tests with the analyzers attached as analyzer references. |
 | `Tests/Mockolate.Migration.NSubstitutePlayground` | The same for NSubstitute. |

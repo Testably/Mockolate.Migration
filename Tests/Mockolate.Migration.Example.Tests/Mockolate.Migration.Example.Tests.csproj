@@ -12,13 +12,11 @@
 		<ProjectReference Include="..\..\Source\Mockolate.Migration.Analyzers\Mockolate.Migration.Analyzers.csproj"
 						  PrivateAssets="all"
 						  ReferenceOutputAssembly="false"
-						  OutputItemType="Analyzer"
-						  SetTargetFramework="TargetFramework=netstandard2.0"/>
+						  OutputItemType="Analyzer"/>
 		<ProjectReference Include="..\..\Source\Mockolate.Migration.Analyzers.CodeFixers\Mockolate.Migration.Analyzers.CodeFixers.csproj"
 						  PrivateAssets="all"
 						  ReferenceOutputAssembly="false"
-						  OutputItemType="Analyzer"
-						  SetTargetFramework="TargetFramework=netstandard2.0"/>
+						  OutputItemType="Analyzer"/>
 	</ItemGroup>
 
 	<ItemGroup>
