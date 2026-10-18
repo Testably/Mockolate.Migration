@@ -190,7 +190,7 @@ public partial class MoqCodeFixProviderTests
 				""");
 
 		[Test]
-		public async Task VerifyAdd_WithUntranslatableTimes_FallsBackToAtLeastOnce()
+		public async Task VerifyAdd_WithUntranslatableTimes_PreservesOriginalCallWithTodo()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
 				using Moq;
@@ -212,7 +212,6 @@ public partial class MoqCodeFixProviderTests
 				using Moq;
 				using System;
 				using Mockolate;
-				using Mockolate.Verify;
 
 				public interface IFoo { event EventHandler MyEvent; }
 
@@ -222,7 +221,8 @@ public partial class MoqCodeFixProviderTests
 					{
 						var times = Times.Once();
 						var mock = IFoo.CreateMock();
-						mock.Mock.Verify.MyEvent.Subscribed().AtLeastOnce();
+						// TODO(MockolateM001): translate the Times argument 'times' manually
+						mock.VerifyAdd(m => m.MyEvent += It.IsAny<EventHandler>(), times);
 					}
 				}
 				""");
@@ -295,6 +295,42 @@ public partial class MoqCodeFixProviderTests
 					{
 						var mock = IFoo.CreateMock();
 						mock.Mock.Verify.MyEvent.Unsubscribed().Exactly(2);
+					}
+				}
+				""");
+
+		[Test]
+		public async Task VerifyRemove_WithUntranslatableTimes_PreservesOriginalCallWithTodo()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using Moq;
+				using System;
+
+				public interface IFoo { event EventHandler MyEvent; }
+
+				public class Tests
+				{
+					public void Test(Func<Times> times)
+					{
+						var mock = [|new Mock<IFoo>()|];
+						mock.VerifyRemove(m => m.MyEvent -= It.IsAny<EventHandler>(), times);
+					}
+				}
+				""",
+				"""
+				using Moq;
+				using System;
+				using Mockolate;
+
+				public interface IFoo { event EventHandler MyEvent; }
+
+				public class Tests
+				{
+					public void Test(Func<Times> times)
+					{
+						var mock = IFoo.CreateMock();
+						// TODO(MockolateM001): translate the Times argument 'times' manually
+						mock.VerifyRemove(m => m.MyEvent -= It.IsAny<EventHandler>(), times);
 					}
 				}
 				""");

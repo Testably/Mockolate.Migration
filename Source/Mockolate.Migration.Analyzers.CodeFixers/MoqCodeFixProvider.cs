@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
@@ -87,14 +88,16 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> callbackReplacements =
 			FindAndBuildCallbackReplacements(allInvocations, setupCallReplacements, out HashSet<InvocationExpressionSyntax> setupsWrappedByCallbacks);
 
+		Dictionary<InvocationExpressionSyntax, SyntaxTriviaList> untranslatedVerifyCalls = [];
+
 		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> verifyCallReplacements =
-			FindAndBuildVerifyCallReplacements(allInvocations, semanticModel, mockSymbol, cancellationToken);
+			FindAndBuildVerifyCallReplacements(allInvocations, semanticModel, mockSymbol, untranslatedVerifyCalls, cancellationToken);
 
 		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> verifyEventCallReplacements =
-			FindAndBuildVerifyEventCallReplacements(allInvocations, semanticModel, mockSymbol, cancellationToken);
+			FindAndBuildVerifyEventCallReplacements(allInvocations, semanticModel, mockSymbol, untranslatedVerifyCalls, cancellationToken);
 
 		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> verifyPropertyCallReplacements =
-			FindAndBuildVerifyPropertyCallReplacements(allInvocations, semanticModel, mockSymbol, cancellationToken);
+			FindAndBuildVerifyPropertyCallReplacements(allInvocations, semanticModel, mockSymbol, untranslatedVerifyCalls, cancellationToken);
 
 		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> raiseCallReplacements =
 			FindAndBuildRaiseCallReplacements(allInvocations, semanticModel, mockSymbol, cancellationToken);
@@ -113,11 +116,12 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		nodesToReplace.AddRange(verifyCallReplacements.Keys);
 		nodesToReplace.AddRange(verifyEventCallReplacements.Keys);
 		nodesToReplace.AddRange(verifyPropertyCallReplacements.Keys);
+		nodesToReplace.AddRange(untranslatedVerifyCalls.Keys);
 		nodesToReplace.AddRange(raiseCallReplacements.Keys);
 
 		compilationUnit = compilationUnit.ReplaceNodes(
 			nodesToReplace,
-			(original, _) =>
+			(original, rewritten) =>
 			{
 				if (original == expressionSyntax)
 				{
@@ -164,6 +168,11 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 					if (verifyPropertyCallReplacements.TryGetValue(invocation, out InvocationExpressionSyntax? verifyPropertyReplacement))
 					{
 						return verifyPropertyReplacement;
+					}
+
+					if (untranslatedVerifyCalls.TryGetValue(invocation, out SyntaxTriviaList todoTrivia))
+					{
+						return rewritten.WithLeadingTrivia(todoTrivia);
 					}
 
 					if (raiseCallReplacements.TryGetValue(invocation, out InvocationExpressionSyntax? raiseReplacement))
@@ -915,6 +924,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		IReadOnlyList<InvocationExpressionSyntax> allInvocations,
 		SemanticModel? semanticModel,
 		ISymbol? mockSymbol,
+		Dictionary<InvocationExpressionSyntax, SyntaxTriviaList> untranslatedVerifyCalls,
 		CancellationToken cancellationToken)
 	{
 		if (semanticModel is null || mockSymbol is null)
@@ -1018,29 +1028,14 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 				navChainForTodo = navChain;
 			}
 
-			InvocationExpressionSyntax replacement;
-			if (invocation.ArgumentList.Arguments.Count == 2)
+			InvocationExpressionSyntax? withTimes = ApplyTimesArgument(baseInvocation, invocation, semanticModel, cancellationToken);
+			if (withTimes is null)
 			{
-				ExpressionSyntax timesArg = invocation.ArgumentList.Arguments[1].Expression;
-				InvocationExpressionSyntax? withTimes = ApplyTimesChain(baseInvocation, timesArg);
-				if (withTimes is null)
-				{
-					continue;
-				}
-
-				replacement = withTimes.WithTriviaFrom(invocation);
-			}
-			else
-			{
-				replacement = SyntaxFactory.InvocationExpression(
-						SyntaxFactory.MemberAccessExpression(
-							SyntaxKind.SimpleMemberAccessExpression,
-							baseInvocation,
-							SyntaxFactory.IdentifierName("AtLeastOnce")),
-						SyntaxFactory.ArgumentList())
-					.WithTriviaFrom(invocation);
+				untranslatedVerifyCalls[invocation] = BuildUntranslatedTimesTodoTrivia(invocation);
+				continue;
 			}
 
+			InvocationExpressionSyntax replacement = withTimes.WithTriviaFrom(invocation);
 			if (navChainForTodo is not null)
 			{
 				replacement = replacement.WithLeadingTrivia(BuildNestedMockTodoTrivia(invocation, navChainForTodo));
@@ -1056,6 +1051,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		IReadOnlyList<InvocationExpressionSyntax> allInvocations,
 		SemanticModel? semanticModel,
 		ISymbol? mockSymbol,
+		Dictionary<InvocationExpressionSyntax, SyntaxTriviaList> untranslatedVerifyCalls,
 		CancellationToken cancellationToken)
 	{
 		if (semanticModel is null || mockSymbol is null)
@@ -1156,21 +1152,14 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 					SyntaxFactory.IdentifierName(eventSubscriptionMethod)),
 				SyntaxFactory.ArgumentList());
 
-			InvocationExpressionSyntax atLeastOnceFallback = SyntaxFactory.InvocationExpression(
-				SyntaxFactory.MemberAccessExpression(
-					SyntaxKind.SimpleMemberAccessExpression,
-					baseInvocation,
-					SyntaxFactory.IdentifierName("AtLeastOnce")),
-				SyntaxFactory.ArgumentList());
+			InvocationExpressionSyntax? withTimes = ApplyTimesArgument(baseInvocation, invocation, semanticModel, cancellationToken);
+			if (withTimes is null)
+			{
+				untranslatedVerifyCalls[invocation] = BuildUntranslatedTimesTodoTrivia(invocation);
+				continue;
+			}
 
-			// Fall back to AtLeastOnce when the Times argument can't be translated — the
-			// Mock<T>() construction is unconditionally rewritten, so leaving the original
-			// VerifyAdd/VerifyRemove in place would produce non-compiling code.
-			InvocationExpressionSyntax replacement = invocation.ArgumentList.Arguments.Count == 2
-				? (ApplyTimesChain(baseInvocation, invocation.ArgumentList.Arguments[1].Expression) ?? atLeastOnceFallback)
-				.WithTriviaFrom(invocation)
-				: atLeastOnceFallback.WithTriviaFrom(invocation);
-
+			InvocationExpressionSyntax replacement = withTimes.WithTriviaFrom(invocation);
 			if (navigationChain.Count > 0)
 			{
 				replacement = replacement.WithLeadingTrivia(BuildNestedMockTodoTrivia(invocation, receiver));
@@ -1186,6 +1175,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		IReadOnlyList<InvocationExpressionSyntax> allInvocations,
 		SemanticModel? semanticModel,
 		ISymbol? mockSymbol,
+		Dictionary<InvocationExpressionSyntax, SyntaxTriviaList> untranslatedVerifyCalls,
 		CancellationToken cancellationToken)
 	{
 		if (semanticModel is null || mockSymbol is null)
@@ -1295,21 +1285,14 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 					SyntaxFactory.IdentifierName(verifyMethod)),
 				setValueArgs ?? SyntaxFactory.ArgumentList());
 
-			InvocationExpressionSyntax atLeastOnceFallback = SyntaxFactory.InvocationExpression(
-				SyntaxFactory.MemberAccessExpression(
-					SyntaxKind.SimpleMemberAccessExpression,
-					baseInvocation,
-					SyntaxFactory.IdentifierName("AtLeastOnce")),
-				SyntaxFactory.ArgumentList());
+			InvocationExpressionSyntax? withTimes = ApplyTimesArgument(baseInvocation, invocation, semanticModel, cancellationToken);
+			if (withTimes is null)
+			{
+				untranslatedVerifyCalls[invocation] = BuildUntranslatedTimesTodoTrivia(invocation);
+				continue;
+			}
 
-			// Fall back to AtLeastOnce when the Times argument can't be translated — the
-			// Mock<T>() construction is unconditionally rewritten, so leaving the original
-			// VerifyGet/VerifySet in place would produce non-compiling code.
-			InvocationExpressionSyntax replacement = invocation.ArgumentList.Arguments.Count == 2
-				? (ApplyTimesChain(baseInvocation, invocation.ArgumentList.Arguments[1].Expression) ?? atLeastOnceFallback)
-				.WithTriviaFrom(invocation)
-				: atLeastOnceFallback.WithTriviaFrom(invocation);
-
+			InvocationExpressionSyntax replacement = withTimes.WithTriviaFrom(invocation);
 			if (navigationChain.Count > 0)
 			{
 				replacement = replacement.WithLeadingTrivia(BuildNestedMockTodoTrivia(invocation, receiver));
@@ -1333,6 +1316,39 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		ArgumentListSyntax transformed = TransformMoqItReferences(wrapped);
 		return SyntaxFactory.ArgumentList(
 			SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(transformed.Arguments[0].Expression)));
+	}
+
+	/// <summary>
+	///     Appends the count of the Moq <c>Times</c> argument, or <c>AtLeastOnce()</c> (Moq's default) when the call has
+	///     none or only a failure message. Returns <see langword="null" /> when the <c>Times</c> argument cannot be translated.
+	/// </summary>
+	private static InvocationExpressionSyntax? ApplyTimesArgument(InvocationExpressionSyntax baseInvocation,
+		InvocationExpressionSyntax invocation, SemanticModel semanticModel, CancellationToken cancellationToken)
+	{
+		if (invocation.ArgumentList.Arguments.Count == 2)
+		{
+			ExpressionSyntax secondArg = invocation.ArgumentList.Arguments[1].Expression;
+			if (semanticModel.GetTypeInfo(secondArg, cancellationToken).Type?.SpecialType != SpecialType.System_String)
+			{
+				return ApplyTimesChain(baseInvocation, secondArg);
+			}
+		}
+
+		return SyntaxFactory.InvocationExpression(
+			SyntaxFactory.MemberAccessExpression(
+				SyntaxKind.SimpleMemberAccessExpression,
+				baseInvocation,
+				SyntaxFactory.IdentifierName("AtLeastOnce")),
+			SyntaxFactory.ArgumentList());
+	}
+
+	private static SyntaxTriviaList BuildUntranslatedTimesTodoTrivia(InvocationExpressionSyntax invocation)
+	{
+		// A line break inside the argument would end the comment and leak the rest into the code.
+		string timesArg = string.Join(" ", invocation.ArgumentList.Arguments[1].Expression.ToString()
+			.Split(['\r', '\n',], StringSplitOptions.RemoveEmptyEntries)
+			.Select(line => line.Trim()));
+		return BuildTodoTrivia(invocation, $"// TODO(MockolateM001): translate the Times argument '{timesArg}' manually");
 	}
 
 	private static InvocationExpressionSyntax? ApplyTimesChain(
@@ -1832,14 +1848,17 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		return SyntaxFactory.UsingDirective(name);
 	}
 
-	private static SyntaxTriviaList BuildNestedMockTodoTrivia(SyntaxNode anchor, ExpressionSyntax navigationRoot)
+	private static SyntaxTriviaList BuildNestedMockTodoTrivia(SyntaxNode anchor, ExpressionSyntax navigationRoot) =>
+		BuildTodoTrivia(anchor,
+			$"// TODO(MockolateM001): register the nested '{navigationRoot}' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)");
+
+	private static SyntaxTriviaList BuildTodoTrivia(SyntaxNode anchor, string comment)
 	{
 		SyntaxTriviaList existing = anchor.GetLeadingTrivia();
 		SyntaxTrivia indent = existing.LastOrDefault(t => t.IsKind(SyntaxKind.WhitespaceTrivia));
 		string endOfLine = DetectLineEnding(anchor.SyntaxTree.GetRoot());
 		return existing
-			.Add(SyntaxFactory.Comment(
-				$"// TODO(MockolateM001): register the nested '{navigationRoot}' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)"))
+			.Add(SyntaxFactory.Comment(comment))
 			.Add(SyntaxFactory.EndOfLine(endOfLine))
 			.Add(indent);
 	}
