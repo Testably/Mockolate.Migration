@@ -1,4 +1,5 @@
-using Verifier = Mockolate.Migration.Tests.Verifiers.CSharpCodeFixVerifier<Mockolate.Migration.Analyzers.MoqAnalyzer,
+using Microsoft.CodeAnalysis.Testing;
+using Verifier =Mockolate.Migration.Tests.Verifiers.CSharpCodeFixVerifier<Mockolate.Migration.Analyzers.MoqAnalyzer,
 	Mockolate.Migration.Analyzers.MoqCodeFixProvider>;
 
 namespace Mockolate.Migration.Tests;
@@ -13,6 +14,8 @@ public partial class MoqCodeFixProviderTests
 				"""
 				using Moq;
 
+				namespace MyCode;
+
 				public interface IFoo { }
 
 				public class Tests
@@ -23,6 +26,8 @@ public partial class MoqCodeFixProviderTests
 				"""
 				using Moq;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { }
 
@@ -38,6 +43,8 @@ public partial class MoqCodeFixProviderTests
 				"""
 				using Moq;
 
+				namespace MyCode;
+
 				public interface IFoo { }
 
 				public class Tests
@@ -51,6 +58,8 @@ public partial class MoqCodeFixProviderTests
 				"""
 				using Moq;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { }
 
@@ -65,9 +74,13 @@ public partial class MoqCodeFixProviderTests
 
 		[Test]
 		public async Task TargetTyped_IsReplaced()
-			=> await Verifier.VerifyCodeFixAsync(
-				"""
+			=> await new Verifier.Test
+			{
+				CodeActionValidationMode = CodeActionValidationMode.None,
+				TestCode = """
 				using Moq;
+
+				namespace MyCode;
 
 				public interface IFoo { }
 
@@ -79,9 +92,11 @@ public partial class MoqCodeFixProviderTests
 					}
 				}
 				""",
-				"""
+				FixedCode = """
 				using Moq;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { }
 
@@ -89,10 +104,11 @@ public partial class MoqCodeFixProviderTests
 				{
 					public void Test()
 					{
-						IFoo mock = IFoo.CreateMock();
+						MyCode.IFoo mock = MyCode.IFoo.CreateMock();
 					}
 				}
-				""");
+				""",
+			}.RunAsync();
 
 		[Test]
 		public async Task WithExistingMockolateUsing_DoesNotDuplicateUsing()
@@ -100,6 +116,8 @@ public partial class MoqCodeFixProviderTests
 				"""
 				using Moq;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { }
 
@@ -114,6 +132,8 @@ public partial class MoqCodeFixProviderTests
 				"""
 				using Moq;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { }
 
@@ -132,6 +152,8 @@ public partial class MoqCodeFixProviderTests
 				"""
 				using Moq;
 
+				namespace MyCode;
+
 				public interface IFoo { bool Bar<T>(T x); }
 
 				public class Tests
@@ -147,6 +169,8 @@ public partial class MoqCodeFixProviderTests
 				using Moq;
 				using Mockolate;
 
+				namespace MyCode;
+
 				public interface IFoo { bool Bar<T>(T x); }
 
 				public class Tests
@@ -154,7 +178,7 @@ public partial class MoqCodeFixProviderTests
 					public void Test()
 					{
 						var mock = IFoo.CreateMock();
-						mock.Mock.Setup.Bar<int>(It.IsAny<int>()).Returns(true);
+						mock.Mock.Setup.Bar<int>({|CS0104:It|}.IsAny<int>()).Returns(true);
 					}
 				}
 				""");
@@ -164,6 +188,8 @@ public partial class MoqCodeFixProviderTests
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
 				using Moq;
+
+				namespace MyCode;
 
 				public interface IFoo { }
 
@@ -178,6 +204,8 @@ public partial class MoqCodeFixProviderTests
 				"""
 				using Moq;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { }
 
@@ -196,6 +224,8 @@ public partial class MoqCodeFixProviderTests
 				"""
 				using Moq;
 
+				namespace MyCode;
+
 				public interface IBar { bool Bar(string x); }
 				public interface IChild { IBar GrandChild { get; } }
 				public interface IFoo { IChild Child { get; } }
@@ -213,6 +243,8 @@ public partial class MoqCodeFixProviderTests
 				using Moq;
 				using Mockolate;
 
+				namespace MyCode;
+
 				public interface IBar { bool Bar(string x); }
 				public interface IChild { IBar GrandChild { get; } }
 				public interface IFoo { IChild Child { get; } }
@@ -223,7 +255,7 @@ public partial class MoqCodeFixProviderTests
 					{
 						var mock = IFoo.CreateMock();
 						// TODO(MockolateM001): register the nested 'mock.Child.GrandChild' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
-						mock.Child.GrandChild.Mock.Bar(It.IsAny<string>()).Returns(true);
+						{|CS1929:mock.Child.GrandChild|}.Mock.Bar({|CS0104:It|}.IsAny<string>()).Returns(true);
 					}
 				}
 				""");
@@ -233,6 +265,8 @@ public partial class MoqCodeFixProviderTests
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
 				using Moq;
+
+				namespace MyCode;
 
 				public interface IFoo { }
 
@@ -248,6 +282,8 @@ public partial class MoqCodeFixProviderTests
 				"""
 				using Moq;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { }
 
@@ -267,6 +303,8 @@ public partial class MoqCodeFixProviderTests
 				"""
 				using Moq;
 
+				namespace MyCode;
+
 				public interface IFoo { }
 
 				public class Tests
@@ -280,6 +318,8 @@ public partial class MoqCodeFixProviderTests
 				"""
 				using Moq;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { }
 
@@ -298,6 +338,8 @@ public partial class MoqCodeFixProviderTests
 				"""
 				using Moq;
 
+				namespace MyCode;
+
 				public interface IFoo { bool Bar(string x); }
 
 				public class Tests
@@ -313,6 +355,8 @@ public partial class MoqCodeFixProviderTests
 				using Moq;
 				using Mockolate;
 
+				namespace MyCode;
+
 				public interface IFoo { bool Bar(string x); }
 
 				public class Tests
@@ -320,7 +364,7 @@ public partial class MoqCodeFixProviderTests
 					public void Test()
 					{
 						var mock = IFoo.CreateMock();
-						mock.Mock.Setup.Bar(It.IsAny<string>()).Returns(true);
+						mock.Mock.Setup.Bar({|CS0104:It|}.IsAny<string>()).Returns(true);
 					}
 				}
 				""");
@@ -330,6 +374,8 @@ public partial class MoqCodeFixProviderTests
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
 				using Moq;
+
+				namespace MyCode;
 
 				public interface IFoo { bool Bar(string x, int y); }
 
@@ -346,6 +392,8 @@ public partial class MoqCodeFixProviderTests
 				using Moq;
 				using Mockolate;
 
+				namespace MyCode;
+
 				public interface IFoo { bool Bar(string x, int y); }
 
 				public class Tests
@@ -353,7 +401,7 @@ public partial class MoqCodeFixProviderTests
 					public void Test()
 					{
 						var mock = IFoo.CreateMock();
-						mock.Mock.Setup.Bar(It.IsAny<string>(), It.IsAny<int>()).Returns(true);
+						mock.Mock.Setup.Bar({|CS0104:It|}.IsAny<string>(), {|CS0104:It|}.IsAny<int>()).Returns(true);
 					}
 				}
 				""");
@@ -363,6 +411,8 @@ public partial class MoqCodeFixProviderTests
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
 				using Moq;
+
+				namespace MyCode;
 
 				public interface IFoo { }
 
@@ -377,6 +427,8 @@ public partial class MoqCodeFixProviderTests
 				"""
 				using Moq;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { }
 

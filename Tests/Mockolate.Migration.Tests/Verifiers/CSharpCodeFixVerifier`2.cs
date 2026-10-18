@@ -34,19 +34,6 @@ public static partial class CSharpCodeFixVerifier<TAnalyzer, TCodeFix>
 		{
 			TestCode = source,
 			CodeActionValidationMode = CodeActionValidationMode.SemanticStructure,
-			ReferenceAssemblies = ReferenceAssemblies.Net.Net80.AddPackages(
-			[
-				new PackageIdentity("Moq", "4.20.72"),
-				new PackageIdentity("NSubstitute", "5.3.0"),
-			]),
-			TestState =
-			{
-				AdditionalReferences =
-				{
-					typeof(MockRegistry).Assembly.Location,
-				},
-			},
-			CompilerDiagnostics = CompilerDiagnostics.None,
 		};
 
 		test.ExpectedDiagnostics.AddRange(expected);
@@ -76,19 +63,6 @@ public static partial class CSharpCodeFixVerifier<TAnalyzer, TCodeFix>
 		{
 			TestCode = source,
 			FixedCode = fixedSource,
-			ReferenceAssemblies = ReferenceAssemblies.Net.Net80.AddPackages(
-			[
-				new PackageIdentity("Moq", "4.20.72"),
-				new PackageIdentity("NSubstitute", "5.3.0"),
-			]),
-			TestState =
-			{
-				AdditionalReferences =
-				{
-					typeof(MockRegistry).Assembly.Location,
-				},
-			},
-			CompilerDiagnostics = CompilerDiagnostics.None,
 		};
 
 		test.ExpectedDiagnostics.AddRange(expected);
@@ -111,19 +85,6 @@ public static partial class CSharpCodeFixVerifier<TAnalyzer, TCodeFix>
 		{
 			TestCode = source,
 			FixedCode = fixedSource,
-			ReferenceAssemblies = ReferenceAssemblies.Net.Net80.AddPackages(
-			[
-				new PackageIdentity("Moq", "4.20.72"),
-				new PackageIdentity("NSubstitute", "5.3.0"),
-			]),
-			TestState =
-			{
-				AdditionalReferences =
-				{
-					typeof(MockRegistry).Assembly.Location,
-				},
-			},
-			CompilerDiagnostics = CompilerDiagnostics.None,
 		};
 
 		test.ExpectedDiagnostics.AddRange(expected);

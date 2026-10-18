@@ -14,6 +14,8 @@ public partial class MoqCodeFixProviderTests
 				using Moq;
 				using System;
 
+				namespace MyCode;
+
 				public class MyEventArgs : EventArgs { public int Value; }
 				public interface IFoo { event EventHandler<MyEventArgs> MyEvent; }
 
@@ -30,6 +32,8 @@ public partial class MoqCodeFixProviderTests
 				using Moq;
 				using System;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public class MyEventArgs : EventArgs { public int Value; }
 				public interface IFoo { event EventHandler<MyEventArgs> MyEvent; }
@@ -51,6 +55,8 @@ public partial class MoqCodeFixProviderTests
 				using Moq;
 				using System;
 
+				namespace MyCode;
+
 				public interface IFoo { event EventHandler MyEvent; }
 
 				public class Tests
@@ -66,6 +72,8 @@ public partial class MoqCodeFixProviderTests
 				using Moq;
 				using System;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { event EventHandler MyEvent; }
 
@@ -85,6 +93,8 @@ public partial class MoqCodeFixProviderTests
 				"""
 				using Moq;
 
+				namespace MyCode;
+
 				public delegate void FooDelegate(string type, int amount);
 				public interface IFoo { event FooDelegate MyEvent; }
 
@@ -100,6 +110,8 @@ public partial class MoqCodeFixProviderTests
 				"""
 				using Moq;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public delegate void FooDelegate(string type, int amount);
 				public interface IFoo { event FooDelegate MyEvent; }
@@ -121,6 +133,8 @@ public partial class MoqCodeFixProviderTests
 				using Moq;
 				using System;
 
+				namespace MyCode;
+
 				public interface IFoo { event Action<int> MyEvent; }
 
 				public class Tests
@@ -136,6 +150,8 @@ public partial class MoqCodeFixProviderTests
 				using Moq;
 				using System;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { event Action<int> MyEvent; }
 

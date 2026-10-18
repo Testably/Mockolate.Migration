@@ -13,6 +13,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { void Bar(string x); }
 
 				public class Tests
@@ -28,6 +30,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { void Bar(string x); }
 
@@ -48,6 +52,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public class Foo { public virtual void Bar(string x) { } }
 
 				public class Tests
@@ -62,6 +68,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public class Foo { public virtual void Bar(string x) { } }
 
@@ -82,6 +90,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using System;
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { void Bar(int x); }
 
 				public class Tests
@@ -97,6 +107,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using System;
 				using NSubstitute;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { void Bar(int x); }
 
@@ -117,6 +129,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { void Bar(string x); }
 
 				public class Tests
@@ -132,6 +146,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { void Bar(string x); }
 
