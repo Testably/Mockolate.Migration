@@ -1,3 +1,4 @@
+using System.Threading;
 using Microsoft.CodeAnalysis.Testing;
 using Verifier =Mockolate.Migration.Tests.Verifiers.CSharpCodeFixVerifier<Mockolate.Migration.Analyzers.MoqAnalyzer,
 	Mockolate.Migration.Analyzers.MoqCodeFixProvider>;
@@ -73,7 +74,7 @@ public partial class MoqCodeFixProviderTests
 				""");
 
 		[Test]
-		public async Task TargetTyped_IsReplaced()
+		public async Task TargetTyped_IsReplaced(CancellationToken cancellationToken)
 			=> await new Verifier.Test
 			{
 				CodeActionValidationMode = CodeActionValidationMode.None,
@@ -108,7 +109,7 @@ public partial class MoqCodeFixProviderTests
 					}
 				}
 				""",
-			}.RunAsync();
+			}.RunAsync(cancellationToken);
 
 		[Test]
 		public async Task WithExistingMockolateUsing_DoesNotDuplicateUsing()
