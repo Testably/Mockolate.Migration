@@ -4,4 +4,11 @@
 		<RootNamespace>Mockolate.Migration</RootNamespace>
 	</PropertyGroup>
 
+	<ItemGroup>
+		<ProjectReference Include="..\Mockolate.Migration.Analyzers\Mockolate.Migration.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+		<None Include="$(MSBuildProjectDirectory)\..\Mockolate.Migration.Analyzers\bin\$(Configuration)\netstandard2.0\Mockolate.Migration.Analyzers.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
+		<ProjectReference Include="..\Mockolate.Migration.Analyzers.CodeFixers\Mockolate.Migration.Analyzers.CodeFixers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+		<None Include="$(MSBuildProjectDirectory)\..\Mockolate.Migration.Analyzers.CodeFixers\bin\$(Configuration)\netstandard2.0\Mockolate.Migration.Analyzers.CodeFixers.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
+	</ItemGroup>
+
 </Project>

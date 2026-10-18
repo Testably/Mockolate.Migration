@@ -30,7 +30,7 @@ A full solution build compiles the analyzer projects several times in parallel (
 | `UnitTests` | Runs the test projects in `UnitTestProjects` (`Pipeline/Build.UnitTest.cs`): both Playgrounds and `Mockolate.Migration.Tests`, with coverage, writing `.trx` files to `TestResults/`. |
 | `CodeCoverage` | `UnitTests`, then merges the coverage into `TestResults/reports/OpenCover.xml`. |
 | `UpdateReadme` | Writes `Artifacts/README.md` with a changelog badge for the package. |
-| `Pack` | `UpdateReadme` and `Compile`, then moves the packages of `Source/Mockolate.Migration` to `Artifacts/Packages`. |
+| `Pack` | `UpdateReadme` and `Compile`, then moves the packages of `Source/Mockolate.Migration` to `Artifacts/Packages`. Fails when a `.nupkg` contains no `analyzers/dotnet/cs/*.dll`. |
 | `CodeAnalysis` | The default target. Wraps `Compile` and `CodeCoverage` in a SonarCloud analysis; needs a Sonar token. |
 
 Locally the pipeline builds in `Debug`. On Windows, `Compile` then fails because it rebuilds `Pipeline/Build.csproj` while that build is running; pass `--configuration Release` (as CI does implicitly):
