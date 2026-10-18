@@ -79,6 +79,40 @@ public partial class MoqCodeFixProviderTests
 				""");
 
 		[Test]
+		public async Task WithFailMessage_MigratesVerifyToAtLeastOnce()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using Moq;
+
+				public interface IFoo { bool Bar(string x); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = [|new Mock<IFoo>()|];
+						mock.Verify(m => m.Bar(It.IsAny<string>()), "Bar was not called");
+					}
+				}
+				""",
+				"""
+				using Moq;
+				using Mockolate;
+				using Mockolate.Verify;
+
+				public interface IFoo { bool Bar(string x); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = IFoo.CreateMock();
+						mock.Mock.Verify.Bar(It.IsAny<string>()).AtLeastOnce();
+					}
+				}
+				""");
+
+		[Test]
 		public async Task WithNoTimes_MigratesVerifyToAtLeastOnce()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -227,6 +261,44 @@ public partial class MoqCodeFixProviderTests
 				  """);
 
 		[Test]
+		public async Task WithUnrecognizedMultiLineTimesArg_KeepsTodoOnOneLine()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using Moq;
+
+				public interface IFoo { void Bar(); }
+
+				public class Tests
+				{
+					public void Test(bool flag)
+					{
+						var mock = [|new Mock<IFoo>()|];
+						mock.Verify(m => m.Bar(), flag
+							? Times.Once()
+							: Times.Never());
+					}
+				}
+				""",
+				"""
+				using Moq;
+				using Mockolate;
+
+				public interface IFoo { void Bar(); }
+
+				public class Tests
+				{
+					public void Test(bool flag)
+					{
+						var mock = IFoo.CreateMock();
+						// TODO(MockolateM001): translate the Times argument 'flag ? Times.Once() : Times.Never()' manually
+						mock.Verify(m => m.Bar(), flag
+							? Times.Once()
+							: Times.Never());
+					}
+				}
+				""");
+
+		[Test]
 		public async Task WithUnrecognizedTimesArg_PreservesOriginalVerifyCall()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -254,6 +326,7 @@ public partial class MoqCodeFixProviderTests
 					public void Test(Times timesVar)
 					{
 						var mock = IFoo.CreateMock();
+						// TODO(MockolateM001): translate the Times argument 'timesVar' manually
 						mock.Verify(m => m.Bar(), timesVar);
 					}
 				}
