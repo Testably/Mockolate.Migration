@@ -13,6 +13,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IBar { int Compute(int x); }
 				public interface IFoo { IBar Child { get; } }
 
@@ -29,6 +31,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using NSubstitute;
 				using Mockolate;
 
+				namespace MyCode;
+
 				public interface IBar { int Compute(int x); }
 				public interface IFoo { IBar Child { get; } }
 
@@ -38,7 +42,7 @@ public partial class NSubstituteCodeFixProviderTests
 					{
 						var sub = IFoo.CreateMock();
 						// TODO(MockolateM002): register the nested 'sub.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
-						sub.Child.Mock.Setup.Compute(1).Returns(42);
+						{|CS1929:sub.Child|}.Mock.Setup.Compute(1).Returns(42);
 					}
 				}
 				""");
@@ -48,6 +52,8 @@ public partial class NSubstituteCodeFixProviderTests
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
 				using NSubstitute;
+
+				namespace MyCode;
 
 				public interface IBar { string Name { get; } }
 				public interface IFoo { IBar Child { get; } }
@@ -65,6 +71,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using NSubstitute;
 				using Mockolate;
 
+				namespace MyCode;
+
 				public interface IBar { string Name { get; } }
 				public interface IFoo { IBar Child { get; } }
 
@@ -74,7 +82,7 @@ public partial class NSubstituteCodeFixProviderTests
 					{
 						var sub = IFoo.CreateMock();
 						// TODO(MockolateM002): register the nested 'sub.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
-						sub.Child.Mock.Setup.Name.Returns("baz");
+						{|CS1929:sub.Child|}.Mock.Setup.Name.Returns("baz");
 					}
 				}
 				""");
@@ -84,6 +92,8 @@ public partial class NSubstituteCodeFixProviderTests
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
 				using NSubstitute;
+
+				namespace MyCode;
 
 				public interface IBar { string Name { get; } }
 				public interface IFoo { IBar Child { get; } }
@@ -102,6 +112,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using Mockolate;
 				using Mockolate.Verify;
 
+				namespace MyCode;
+
 				public interface IBar { string Name { get; } }
 				public interface IFoo { IBar Child { get; } }
 
@@ -111,7 +123,7 @@ public partial class NSubstituteCodeFixProviderTests
 					{
 						var sub = IFoo.CreateMock();
 						// TODO(MockolateM002): register the nested 'sub.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
-						sub.Child.Mock.Verify.Name.Got().Exactly(2);
+						{|CS1929:sub.Child|}.Mock.Verify.Name.Got().Exactly(2);
 					}
 				}
 				""");
@@ -121,6 +133,8 @@ public partial class NSubstituteCodeFixProviderTests
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
 				using NSubstitute;
+
+				namespace MyCode;
 
 				public interface IBar { string Name { get; set; } }
 				public interface IFoo { IBar Child { get; } }
@@ -139,6 +153,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using Mockolate;
 				using Mockolate.Verify;
 
+				namespace MyCode;
+
 				public interface IBar { string Name { get; set; } }
 				public interface IFoo { IBar Child { get; } }
 
@@ -148,7 +164,7 @@ public partial class NSubstituteCodeFixProviderTests
 					{
 						var sub = IFoo.CreateMock();
 						// TODO(MockolateM002): register the nested 'sub.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
-						sub.Child.Mock.Verify.Name.Set("baz").Exactly(2);
+						{|CS1929:sub.Child|}.Mock.Verify.Name.Set("baz").Exactly(2);
 					}
 				}
 				""");
@@ -158,6 +174,8 @@ public partial class NSubstituteCodeFixProviderTests
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
 				using NSubstitute;
+
+				namespace MyCode;
 
 				public interface IBar { int Compute(int x); }
 				public interface IFoo { IBar Child { get; } }
@@ -176,6 +194,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using Mockolate;
 				using Mockolate.Verify;
 
+				namespace MyCode;
+
 				public interface IBar { int Compute(int x); }
 				public interface IFoo { IBar Child { get; } }
 
@@ -185,7 +205,7 @@ public partial class NSubstituteCodeFixProviderTests
 					{
 						var sub = IFoo.CreateMock();
 						// TODO(MockolateM002): register the nested 'sub.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
-						sub.Child.Mock.Verify.Compute(1).Exactly(2);
+						{|CS1929:sub.Child|}.Mock.Verify.Compute(1).Exactly(2);
 					}
 				}
 				""");
@@ -196,6 +216,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using System;
 				using NSubstitute;
+
+				namespace MyCode;
 
 				public interface IBar { event EventHandler MyEvent; }
 				public interface IFoo { IBar Child { get; } }
@@ -214,6 +236,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using NSubstitute;
 				using Mockolate;
 
+				namespace MyCode;
+
 				public interface IBar { event EventHandler MyEvent; }
 				public interface IFoo { IBar Child { get; } }
 
@@ -223,7 +247,7 @@ public partial class NSubstituteCodeFixProviderTests
 					{
 						var sub = IFoo.CreateMock();
 						// TODO(MockolateM002): register the nested 'sub.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
-						sub.Child.Mock.Raise.MyEvent(null, EventArgs.Empty);
+						{|CS1929:sub.Child|}.Mock.Raise.MyEvent(null, EventArgs.Empty);
 					}
 				}
 				""");

@@ -13,6 +13,8 @@ public partial class MoqCodeFixProviderTests
 				"""
 				using Moq;
 
+				namespace MyCode;
+
 				public interface IFoo { string Name { get; set; } }
 
 				public class Tests
@@ -27,6 +29,8 @@ public partial class MoqCodeFixProviderTests
 				"""
 				using Moq;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { string Name { get; set; } }
 
@@ -46,6 +50,8 @@ public partial class MoqCodeFixProviderTests
 				"""
 				using Moq;
 
+				namespace MyCode;
+
 				public interface IFoo { string Name { get; set; } }
 
 				public class Tests
@@ -61,6 +67,8 @@ public partial class MoqCodeFixProviderTests
 				using Moq;
 				using Mockolate;
 				using Mockolate.Verify;
+
+				namespace MyCode;
 
 				public interface IFoo { string Name { get; set; } }
 
@@ -80,6 +88,8 @@ public partial class MoqCodeFixProviderTests
 				"""
 				using Moq;
 
+				namespace MyCode;
+
 				public interface IFoo { string Name { get; set; } }
 
 				public class Tests
@@ -95,6 +105,8 @@ public partial class MoqCodeFixProviderTests
 				using Moq;
 				using Mockolate;
 				using Mockolate.Verify;
+
+				namespace MyCode;
 
 				public interface IFoo { string Name { get; set; } }
 
@@ -114,6 +126,8 @@ public partial class MoqCodeFixProviderTests
 				"""
 				using Moq;
 
+				namespace MyCode;
+
 				public interface IFoo { string Name { get; set; } }
 
 				public class Tests
@@ -129,6 +143,8 @@ public partial class MoqCodeFixProviderTests
 				using Moq;
 				using Mockolate;
 				using Mockolate.Verify;
+
+				namespace MyCode;
 
 				public interface IFoo { string Name { get; set; } }
 
@@ -148,6 +164,8 @@ public partial class MoqCodeFixProviderTests
 				"""
 				using Moq;
 
+				namespace MyCode;
+
 				public interface IFoo { string Name { get; set; } }
 
 				public class Tests
@@ -163,6 +181,8 @@ public partial class MoqCodeFixProviderTests
 				using Moq;
 				using Mockolate;
 
+				namespace MyCode;
+
 				public interface IFoo { string Name { get; set; } }
 
 				public class Tests
@@ -171,7 +191,7 @@ public partial class MoqCodeFixProviderTests
 					{
 						var mock = IFoo.CreateMock();
 						// TODO(MockolateM001): translate the Times argument 'timesVar' manually
-						mock.VerifyGet(m => m.Name, timesVar);
+						mock.{|CS1061:VerifyGet|}(m => m.Name, timesVar);
 					}
 				}
 				""");
@@ -181,6 +201,8 @@ public partial class MoqCodeFixProviderTests
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
 				using Moq;
+
+				namespace MyCode;
 
 				public interface IFoo { string Name { get; set; } }
 
@@ -197,6 +219,8 @@ public partial class MoqCodeFixProviderTests
 				using Moq;
 				using Mockolate;
 				using Mockolate.Verify;
+
+				namespace MyCode;
 
 				public interface IFoo { string Name { get; set; } }
 
@@ -216,6 +240,8 @@ public partial class MoqCodeFixProviderTests
 				"""
 				using Moq;
 
+				namespace MyCode;
+
 				public interface IFoo { string Name { get; set; } }
 
 				public class Tests
@@ -231,6 +257,8 @@ public partial class MoqCodeFixProviderTests
 				using Moq;
 				using Mockolate;
 				using Mockolate.Verify;
+
+				namespace MyCode;
 
 				public interface IFoo { string Name { get; set; } }
 
@@ -250,6 +278,8 @@ public partial class MoqCodeFixProviderTests
 				"""
 				using Moq;
 
+				namespace MyCode;
+
 				public interface IFoo { string Name { get; set; } }
 
 				public class Tests
@@ -265,6 +295,8 @@ public partial class MoqCodeFixProviderTests
 				using Moq;
 				using Mockolate;
 
+				namespace MyCode;
+
 				public interface IFoo { string Name { get; set; } }
 
 				public class Tests
@@ -273,7 +305,7 @@ public partial class MoqCodeFixProviderTests
 					{
 						var mock = IFoo.CreateMock();
 						// TODO(MockolateM001): translate the Times argument 'timesVar' manually
-						mock.VerifySet(m => m.Name = "foo", timesVar);
+						mock.{|CS0411:VerifySet|}(m => m.Name = "foo", timesVar);
 					}
 				}
 				""");
@@ -283,6 +315,8 @@ public partial class MoqCodeFixProviderTests
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
 				using Moq;
+
+				namespace MyCode;
 
 				public interface IFoo { int Value { get; set; } }
 
@@ -300,6 +334,8 @@ public partial class MoqCodeFixProviderTests
 				using Mockolate;
 				using Mockolate.Verify;
 
+				namespace MyCode;
+
 				public interface IFoo { int Value { get; set; } }
 
 				public class Tests
@@ -307,7 +343,7 @@ public partial class MoqCodeFixProviderTests
 					public void Test()
 					{
 						var mock = IFoo.CreateMock();
-						mock.Mock.Verify.Value.Set(It.IsAny<int>()).Once();
+						mock.Mock.Verify.Value.Set({|CS0104:It|}.IsAny<int>()).Once();
 					}
 				}
 				""");
@@ -317,6 +353,8 @@ public partial class MoqCodeFixProviderTests
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
 				using Moq;
+
+				namespace MyCode;
 
 				public interface IFoo { int Value { get; set; } }
 
@@ -334,6 +372,8 @@ public partial class MoqCodeFixProviderTests
 				using Mockolate;
 				using Mockolate.Verify;
 
+				namespace MyCode;
+
 				public interface IFoo { int Value { get; set; } }
 
 				public class Tests
@@ -341,7 +381,7 @@ public partial class MoqCodeFixProviderTests
 					public void Test()
 					{
 						var mock = IFoo.CreateMock();
-						mock.Mock.Verify.Value.Set(It.IsInRange(1, 5)).AtLeastOnce();
+						mock.Mock.Verify.Value.Set({|CS0104:It|}.IsInRange(1, 5)).AtLeastOnce();
 					}
 				}
 				""");
@@ -351,6 +391,8 @@ public partial class MoqCodeFixProviderTests
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
 				using Moq;
+
+				namespace MyCode;
 
 				public interface IFoo { int Value { get; set; } }
 
@@ -368,6 +410,8 @@ public partial class MoqCodeFixProviderTests
 				using Mockolate;
 				using Mockolate.Verify;
 
+				namespace MyCode;
+
 				public interface IFoo { int Value { get; set; } }
 
 				public class Tests
@@ -375,7 +419,7 @@ public partial class MoqCodeFixProviderTests
 					public void Test()
 					{
 						var mock = IFoo.CreateMock();
-						mock.Mock.Verify.Value.Set(It.IsInRange(1, 5).Exclusive()).AtLeastOnce();
+						mock.Mock.Verify.Value.Set({|CS0104:It|}.IsInRange(1, 5).Exclusive()).AtLeastOnce();
 					}
 				}
 				""");
@@ -385,6 +429,8 @@ public partial class MoqCodeFixProviderTests
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
 				using Moq;
+
+				namespace MyCode;
 
 				public interface IFoo { string Name { get; set; } }
 
@@ -402,6 +448,8 @@ public partial class MoqCodeFixProviderTests
 				using Mockolate;
 				using Mockolate.Verify;
 
+				namespace MyCode;
+
 				public interface IFoo { string Name { get; set; } }
 
 				public class Tests
@@ -409,7 +457,7 @@ public partial class MoqCodeFixProviderTests
 					public void Test()
 					{
 						var mock = IFoo.CreateMock();
-						mock.Mock.Verify.Name.Set(It.Matches("^foo$").AsRegex()).Once();
+						mock.Mock.Verify.Name.Set({|CS0104:It|}.Matches("^foo$").AsRegex()).Once();
 					}
 				}
 				""");
@@ -419,6 +467,8 @@ public partial class MoqCodeFixProviderTests
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
 				using Moq;
+
+				namespace MyCode;
 
 				public interface IBar { string Name { get; set; } }
 				public interface IFoo { IBar Child { get; } }
@@ -437,6 +487,8 @@ public partial class MoqCodeFixProviderTests
 				using Mockolate;
 				using Mockolate.Verify;
 
+				namespace MyCode;
+
 				public interface IBar { string Name { get; set; } }
 				public interface IFoo { IBar Child { get; } }
 
@@ -446,7 +498,7 @@ public partial class MoqCodeFixProviderTests
 					{
 						var mock = IFoo.CreateMock();
 						// TODO(MockolateM001): register the nested 'mock.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
-						mock.Child.Mock.Verify.Name.Got().Exactly(2);
+						{|CS1929:mock.Child|}.Mock.Verify.Name.Got().Exactly(2);
 					}
 				}
 				""");

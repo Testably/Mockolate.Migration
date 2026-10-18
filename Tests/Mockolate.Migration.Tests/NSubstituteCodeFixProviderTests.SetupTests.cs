@@ -13,6 +13,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { int Bar(int x); }
 
 				public class Tests
@@ -27,6 +29,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { int Bar(int x); }
 
@@ -46,6 +50,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { int Sum(int x, int y); }
 
 				public class Tests
@@ -60,6 +66,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { int Sum(int x, int y); }
 
@@ -79,6 +87,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { int Bar(int x); }
 
 				public class Tests
@@ -93,6 +103,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { int Bar(int x); }
 
@@ -112,6 +124,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { int Bar(int a, int b, int c, int d); }
 
 				public class Tests
@@ -126,6 +140,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { int Bar(int a, int b, int c, int d); }
 
@@ -145,6 +161,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { int Bar(int x); }
 
 				public class Tests
@@ -159,6 +177,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { int Bar(int x); }
 
@@ -178,6 +198,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { int Bar(int a, int b, int c, int d, int e); }
 
 				public class Tests
@@ -192,6 +214,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { int Bar(int a, int b, int c, int d, int e); }
 
@@ -211,6 +235,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { int Bar(int a, int b, int c, int d); }
 
 				public class Tests
@@ -225,6 +251,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { int Bar(int a, int b, int c, int d); }
 
@@ -244,6 +272,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { int Bar(int a, int b, int c, int d, int e); }
 
 				public class Tests
@@ -258,6 +288,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { int Bar(int a, int b, int c, int d, int e); }
 
@@ -277,6 +309,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { int Bar(int a, int b, int c, int d, int e); }
 
 				public class Tests
@@ -291,6 +325,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { int Bar(int a, int b, int c, int d, int e); }
 
@@ -310,6 +346,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { int Bar(int x); }
 
 				public class Tests
@@ -324,6 +362,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { int Bar(int x); }
 
@@ -345,6 +385,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using NSubstitute;
 				using NSubstitute.ExceptionExtensions;
 
+				namespace MyCode;
+
 				public interface IFoo { int Bar(int x); }
 
 				public class Tests
@@ -361,6 +403,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using NSubstitute;
 				using NSubstitute.ExceptionExtensions;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { int Bar(int x); }
 
@@ -380,6 +424,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { int Sum(int x, int y); }
 
 				public class Tests
@@ -394,6 +440,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { int Sum(int x, int y); }
 
@@ -413,6 +461,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { string Name { get; } }
 
 				public class Tests
@@ -427,6 +477,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { string Name { get; } }
 
@@ -446,6 +498,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { int Bar(int x, string y); }
 
 				public class Tests
@@ -461,6 +515,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using NSubstitute;
 				using Mockolate;
 
+				namespace MyCode;
+
 				public interface IFoo { int Bar(int x, string y); }
 
 				public class Tests
@@ -468,7 +524,7 @@ public partial class NSubstituteCodeFixProviderTests
 					public void Test()
 					{
 						var sub = IFoo.CreateMock();
-						sub.Mock.Setup.Bar(default, default).AnyParameters().Returns(42);
+						sub.Mock.Setup.{|CS0121:Bar|}(default, default).AnyParameters().Returns(42);
 					}
 				}
 				""");
@@ -478,6 +534,8 @@ public partial class NSubstituteCodeFixProviderTests
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
 				using NSubstitute;
+
+				namespace MyCode;
 
 				public interface IFoo { int Bar(int x); }
 
@@ -494,6 +552,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using NSubstitute;
 				using Mockolate;
 
+				namespace MyCode;
+
 				public interface IFoo { int Bar(int x); }
 
 				public class Tests
@@ -501,7 +561,7 @@ public partial class NSubstituteCodeFixProviderTests
 					public void Test()
 					{
 						var sub = IFoo.CreateMock();
-						sub.Mock.Setup.Bar(default).AnyParameters().Returns(1).Returns(2).Returns(3);
+						sub.Mock.Setup.{|CS0121:Bar|}(default).AnyParameters().Returns(1).Returns(2).Returns(3);
 					}
 				}
 				""");
@@ -512,6 +572,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 				using NSubstitute.ReturnsExtensions;
+
+				namespace MyCode;
 
 				public interface IFoo { string Bar(int x); }
 
@@ -528,6 +590,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using NSubstitute;
 				using NSubstitute.ReturnsExtensions;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { string Bar(int x); }
 
@@ -547,6 +611,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { string Name { get; } }
 
 				public class Tests
@@ -561,6 +627,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { string Name { get; } }
 
@@ -580,6 +648,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { int Bar(int x); }
 
 				public class Tests
@@ -594,6 +664,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { int Bar(int x); }
 
@@ -616,6 +688,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using NSubstitute;
 				using NSubstitute.ExceptionExtensions;
 
+				namespace MyCode;
+
 				public interface IFoo { Task<int> BarAsync(int x); }
 
 				public class Tests
@@ -633,6 +707,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using NSubstitute;
 				using NSubstitute.ExceptionExtensions;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { Task<int> BarAsync(int x); }
 
@@ -654,6 +730,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using NSubstitute;
 				using NSubstitute.ExceptionExtensions;
 
+				namespace MyCode;
+
 				public interface IFoo { int Bar(int x); }
 
 				public class Tests
@@ -671,6 +749,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using NSubstitute.ExceptionExtensions;
 				using Mockolate;
 
+				namespace MyCode;
+
 				public interface IFoo { int Bar(int x); }
 
 				public class Tests
@@ -678,7 +758,7 @@ public partial class NSubstituteCodeFixProviderTests
 					public void Test()
 					{
 						var sub = IFoo.CreateMock();
-						sub.Mock.Setup.Bar(default).AnyParameters().Throws<InvalidOperationException>();
+						sub.Mock.Setup.{|CS0121:Bar|}(default).AnyParameters().Throws<InvalidOperationException>();
 					}
 				}
 				""");
@@ -691,6 +771,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using NSubstitute;
 				using NSubstitute.ExceptionExtensions;
 
+				namespace MyCode;
+
 				public interface IFoo { int Bar(int x); }
 
 				public class Tests
@@ -698,7 +780,7 @@ public partial class NSubstituteCodeFixProviderTests
 					public void Test()
 					{
 						var sub = [|Substitute.For<IFoo>()|];
-						sub.Bar(default).ThrowsForAnyArgs(new InvalidOperationException(), new ArgumentException());
+						sub.Bar(default).{|CS1501:ThrowsForAnyArgs|}(new InvalidOperationException(), new ArgumentException());
 					}
 				}
 				""",
@@ -708,6 +790,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using NSubstitute.ExceptionExtensions;
 				using Mockolate;
 
+				namespace MyCode;
+
 				public interface IFoo { int Bar(int x); }
 
 				public class Tests
@@ -715,7 +799,7 @@ public partial class NSubstituteCodeFixProviderTests
 					public void Test()
 					{
 						var sub = IFoo.CreateMock();
-						sub.Mock.Setup.Bar(default).AnyParameters().Throws(new InvalidOperationException()).Throws(new ArgumentException());
+						sub.Mock.Setup.{|CS0121:Bar|}(default).AnyParameters().Throws(new InvalidOperationException()).Throws(new ArgumentException());
 					}
 				}
 				""");
@@ -727,6 +811,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using System;
 				using NSubstitute;
 				using NSubstitute.ExceptionExtensions;
+
+				namespace MyCode;
 
 				public interface IFoo { int Bar(int x); }
 
@@ -745,6 +831,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using NSubstitute.ExceptionExtensions;
 				using Mockolate;
 
+				namespace MyCode;
+
 				public interface IFoo { int Bar(int x); }
 
 				public class Tests
@@ -752,7 +840,7 @@ public partial class NSubstituteCodeFixProviderTests
 					public void Test()
 					{
 						var sub = IFoo.CreateMock();
-						sub.Mock.Setup.Bar(default).AnyParameters().Throws(new InvalidOperationException());
+						sub.Mock.Setup.{|CS0121:Bar|}(default).AnyParameters().Throws(new InvalidOperationException());
 					}
 				}
 				""");

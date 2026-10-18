@@ -13,6 +13,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { void Bar(int x); }
 
 				public class Tests
@@ -28,6 +30,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using NSubstitute;
 				using Mockolate;
 				using Mockolate.Verify;
+
+				namespace MyCode;
 
 				public interface IFoo { void Bar(int x); }
 
@@ -47,6 +51,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { string Name { get; set; } }
 
 				public class Tests
@@ -62,6 +68,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using NSubstitute;
 				using Mockolate;
 				using Mockolate.Verify;
+
+				namespace MyCode;
 
 				public interface IFoo { string Name { get; set; } }
 
@@ -81,6 +89,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { string Name { get; set; } }
 
 				public class Tests
@@ -96,6 +106,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using NSubstitute;
 				using Mockolate;
 				using Mockolate.Verify;
+
+				namespace MyCode;
 
 				public interface IFoo { string Name { get; set; } }
 
@@ -115,6 +127,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { void Bar(int x, string y); }
 
 				public class Tests
@@ -131,6 +145,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using Mockolate;
 				using Mockolate.Verify;
 
+				namespace MyCode;
+
 				public interface IFoo { void Bar(int x, string y); }
 
 				public class Tests
@@ -138,7 +154,7 @@ public partial class NSubstituteCodeFixProviderTests
 					public void Test()
 					{
 						var sub = IFoo.CreateMock();
-						sub.Mock.Verify.Bar(default, default).AnyParameters().Never();
+						sub.Mock.Verify.{|CS0121:Bar|}(default, default).AnyParameters().Never();
 					}
 				}
 				""");
@@ -148,6 +164,8 @@ public partial class NSubstituteCodeFixProviderTests
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
 				using NSubstitute;
+
+				namespace MyCode;
 
 				public interface IFoo { void Bar(int x); }
 
@@ -166,6 +184,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using Mockolate;
 				using Mockolate.Verify;
 
+				namespace MyCode;
+
 				public interface IFoo { void Bar(int x); }
 
 				public class Tests
@@ -180,10 +200,51 @@ public partial class NSubstituteCodeFixProviderTests
 				""");
 
 		[Test]
+		public async Task ReceivedEventSubscription_IsNotRewritten()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using System;
+				using NSubstitute;
+
+				namespace MyCode;
+
+				public interface IFoo { event EventHandler MyEvent; }
+
+				public class Tests
+				{
+					public void Test(EventHandler handler)
+					{
+						var sub = [|Substitute.For<IFoo>()|];
+						sub.Received().MyEvent += handler;
+					}
+				}
+				""",
+				"""
+				using System;
+				using NSubstitute;
+				using Mockolate;
+
+				namespace MyCode;
+
+				public interface IFoo { event EventHandler MyEvent; }
+
+				public class Tests
+				{
+					public void Test(EventHandler handler)
+					{
+						var sub = IFoo.CreateMock();
+						sub.Received().MyEvent += handler;
+					}
+				}
+				""");
+
+		[Test]
 		public async Task ReceivedExactCount_IsRewrittenToExactly()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
 				using NSubstitute;
+
+				namespace MyCode;
 
 				public interface IFoo { void Bar(int x); }
 
@@ -201,6 +262,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using Mockolate;
 				using Mockolate.Verify;
 
+				namespace MyCode;
+
 				public interface IFoo { void Bar(int x); }
 
 				public class Tests
@@ -214,10 +277,57 @@ public partial class NSubstituteCodeFixProviderTests
 				""");
 
 		[Test]
+		public async Task ReceivedInOrder_IsNotRewritten()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using NSubstitute;
+
+				namespace MyCode;
+
+				public interface IFoo { void Bar(int x); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = [|Substitute.For<IFoo>()|];
+						Received.InOrder(() =>
+						{
+							sub.Bar(1);
+							sub.Bar(2);
+						});
+					}
+				}
+				""",
+				"""
+				using NSubstitute;
+				using Mockolate;
+
+				namespace MyCode;
+
+				public interface IFoo { void Bar(int x); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = IFoo.CreateMock();
+						Received.InOrder(() =>
+						{
+							sub.Bar(1);
+							sub.Bar(2);
+						});
+					}
+				}
+				""");
+
+		[Test]
 		public async Task ReceivedOne_IsRewrittenToOnce()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
 				using NSubstitute;
+
+				namespace MyCode;
 
 				public interface IFoo { void Bar(int x); }
 
@@ -234,6 +344,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using NSubstitute;
 				using Mockolate;
 				using Mockolate.Verify;
+
+				namespace MyCode;
 
 				public interface IFoo { void Bar(int x); }
 
@@ -253,6 +365,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { string Name { get; set; } }
 
 				public class Tests
@@ -268,6 +382,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using NSubstitute;
 				using Mockolate;
 				using Mockolate.Verify;
+
+				namespace MyCode;
 
 				public interface IFoo { string Name { get; set; } }
 
@@ -287,6 +403,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { string Name { get; set; } }
 
 				public class Tests
@@ -302,6 +420,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using NSubstitute;
 				using Mockolate;
 				using Mockolate.Verify;
+
+				namespace MyCode;
 
 				public interface IFoo { string Name { get; set; } }
 
@@ -321,6 +441,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { void Bar(int x, string y); }
 
 				public class Tests
@@ -337,6 +459,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using Mockolate;
 				using Mockolate.Verify;
 
+				namespace MyCode;
+
 				public interface IFoo { void Bar(int x, string y); }
 
 				public class Tests
@@ -344,7 +468,44 @@ public partial class NSubstituteCodeFixProviderTests
 					public void Test()
 					{
 						var sub = IFoo.CreateMock();
-						sub.Mock.Verify.Bar(default, default).AnyParameters().AtLeastOnce();
+						sub.Mock.Verify.{|CS0121:Bar|}(default, default).AnyParameters().AtLeastOnce();
+					}
+				}
+				""");
+
+		[Test]
+		public async Task ReceivedWithAnyArgsPropertyGet_IsNotRewritten()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using NSubstitute;
+
+				namespace MyCode;
+
+				public interface IFoo { string Name { get; set; } }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = [|Substitute.For<IFoo>()|];
+						_ = sub.ReceivedWithAnyArgs().Name;
+					}
+				}
+				""",
+				"""
+				using NSubstitute;
+				using Mockolate;
+
+				namespace MyCode;
+
+				public interface IFoo { string Name { get; set; } }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var sub = IFoo.CreateMock();
+						_ = sub.ReceivedWithAnyArgs().Name;
 					}
 				}
 				""");
@@ -354,6 +515,8 @@ public partial class NSubstituteCodeFixProviderTests
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
 				using NSubstitute;
+
+				namespace MyCode;
 
 				public interface IFoo { void Bar(int x); }
 
@@ -370,6 +533,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using NSubstitute;
 				using Mockolate;
 				using Mockolate.Verify;
+
+				namespace MyCode;
 
 				public interface IFoo { void Bar(int x); }
 

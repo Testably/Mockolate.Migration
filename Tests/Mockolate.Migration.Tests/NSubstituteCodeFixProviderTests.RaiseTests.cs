@@ -14,6 +14,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using System;
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { Action<int> Handler { get; set; } }
 
 				public class Tests
@@ -29,6 +31,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using System;
 				using NSubstitute;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { Action<int> Handler { get; set; } }
 
@@ -49,6 +53,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using System;
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { event Action<int> MyEvent; }
 
 				public class Tests
@@ -64,6 +70,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using System;
 				using NSubstitute;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { event Action<int> MyEvent; }
 
@@ -84,6 +92,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using System;
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { event EventHandler MyEvent; }
 
 				public class Tests
@@ -99,6 +109,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using System;
 				using NSubstitute;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { event EventHandler MyEvent; }
 
@@ -118,6 +130,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { event System.EventHandler MyEvent; }
 
 				public class Tests
@@ -132,6 +146,8 @@ public partial class NSubstituteCodeFixProviderTests
 				"""
 				using NSubstitute;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { event System.EventHandler MyEvent; }
 
@@ -152,6 +168,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using System;
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { event Action<int> MyEvent; }
 
 				public class Tests
@@ -167,6 +185,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using System;
 				using NSubstitute;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { event Action<int> MyEvent; }
 
@@ -187,6 +207,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using System;
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public class MyArgs : EventArgs { }
 				public interface IFoo { event EventHandler<MyArgs> MyEvent; }
 
@@ -203,6 +225,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using System;
 				using NSubstitute;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public class MyArgs : EventArgs { }
 				public interface IFoo { event EventHandler<MyArgs> MyEvent; }
@@ -224,6 +248,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using System;
 				using NSubstitute;
 
+				namespace MyCode;
+
 				public interface IFoo { event EventHandler MyEvent; }
 
 				public class Tests
@@ -239,6 +265,8 @@ public partial class NSubstituteCodeFixProviderTests
 				using System;
 				using NSubstitute;
 				using Mockolate;
+
+				namespace MyCode;
 
 				public interface IFoo { event EventHandler MyEvent; }
 
