@@ -9,7 +9,7 @@ public partial class NSubstituteCodeFixProviderTests
 	{
 		public sealed class AndDoesPath
 		{
-			[Fact]
+			[Test]
 			public async Task AmbiguousArgGeneric_FallsBackToTodo()
 				=> await Verifier.VerifyCodeFixAsync(
 					"""
@@ -45,7 +45,7 @@ public partial class NSubstituteCodeFixProviderTests
 					}
 					""");
 
-			[Fact]
+			[Test]
 			public async Task AssignThroughIndexer_FallsBackToTodo()
 				=> await Verifier.VerifyCodeFixAsync(
 					"""
@@ -79,7 +79,7 @@ public partial class NSubstituteCodeFixProviderTests
 					}
 					""");
 
-			[Fact]
+			[Test]
 			public async Task BodyDoesNotReferenceCallInfo_DropsParameter()
 				=> await Verifier.VerifyCodeFixAsync(
 					"""
@@ -114,7 +114,7 @@ public partial class NSubstituteCodeFixProviderTests
 					}
 					""");
 
-			[Fact]
+			[Test]
 			public async Task BodyUsesArgAtAndIndexer_RewritesToTypedParameters()
 				=> await Verifier.VerifyCodeFixAsync(
 					"""
@@ -149,7 +149,7 @@ public partial class NSubstituteCodeFixProviderTests
 					}
 					""");
 
-			[Fact]
+			[Test]
 			public async Task BodyUsesArgGenericByType_RewritesWhenUnique()
 				=> await Verifier.VerifyCodeFixAsync(
 					"""
@@ -187,7 +187,7 @@ public partial class NSubstituteCodeFixProviderTests
 
 		public sealed class WhenDoPath
 		{
-			[Fact]
+			[Test]
 			public async Task BodyUsesArgAt_RewritesToTypedParameters()
 				=> await Verifier.VerifyCodeFixAsync(
 					"""
@@ -222,7 +222,7 @@ public partial class NSubstituteCodeFixProviderTests
 					}
 					""");
 
-			[Fact]
+			[Test]
 			public async Task MultiArgMethod_BodyIgnoresCallInfo_DropsParameter()
 				=> await Verifier.VerifyCodeFixAsync(
 					"""
@@ -260,7 +260,7 @@ public partial class NSubstituteCodeFixProviderTests
 
 		public sealed class ReturnsPath
 		{
-			[Fact]
+			[Test]
 			public async Task LambdaIgnoresCallInfo_DropsParameter()
 				=> await Verifier.VerifyCodeFixAsync(
 					"""
@@ -293,7 +293,7 @@ public partial class NSubstituteCodeFixProviderTests
 					}
 					""");
 
-			[Fact]
+			[Test]
 			public async Task LambdaUsesArgAt_OnReceiverWithKeywordParameterName_EscapesIdentifier()
 				=> await Verifier.VerifyCodeFixAsync(
 					"""
@@ -326,7 +326,7 @@ public partial class NSubstituteCodeFixProviderTests
 					}
 					""");
 
-			[Fact]
+			[Test]
 			public async Task LambdaUsesArgAt_RewritesToTypedParameters()
 				=> await Verifier.VerifyCodeFixAsync(
 					"""
@@ -359,7 +359,7 @@ public partial class NSubstituteCodeFixProviderTests
 					}
 					""");
 
-			[Fact]
+			[Test]
 			public async Task LambdaWithBareCallInfo_FallsBackToTodo()
 				=> await Verifier.VerifyCodeFixAsync(
 					"""
@@ -399,7 +399,7 @@ public partial class NSubstituteCodeFixProviderTests
 					}
 					""");
 
-			[Fact]
+			[Test]
 			public async Task LambdaWithForeachVariableShadowingReceiverParameter_FallsBackToTodo()
 				=> await Verifier.VerifyCodeFixAsync(
 					"""
@@ -441,7 +441,7 @@ public partial class NSubstituteCodeFixProviderTests
 					}
 					""");
 
-			[Fact]
+			[Test]
 			public async Task LambdaWithLocalShadowingParameterName_FallsBackToTodo()
 				=> await Verifier.VerifyCodeFixAsync(
 					"""
@@ -485,7 +485,7 @@ public partial class NSubstituteCodeFixProviderTests
 					}
 					""");
 
-			[Fact]
+			[Test]
 			public async Task LambdaWithNestedLambdaParameterShadowingReceiverParameter_FallsBackToTodo()
 				=> await Verifier.VerifyCodeFixAsync(
 					"""
@@ -529,7 +529,7 @@ public partial class NSubstituteCodeFixProviderTests
 					}
 					""");
 
-			[Fact]
+			[Test]
 			public async Task LambdaWithNestedLambdaShadowingCallInfoName_DropsParameter()
 				=> await Verifier.VerifyCodeFixAsync(
 					"""
@@ -564,7 +564,7 @@ public partial class NSubstituteCodeFixProviderTests
 					}
 					""");
 
-			[Fact]
+			[Test]
 			public async Task MixedSequence_PerArgRewritePreservesValuesAndRewritesLambdas()
 				=> await Verifier.VerifyCodeFixAsync(
 					"""
@@ -597,7 +597,7 @@ public partial class NSubstituteCodeFixProviderTests
 					}
 					""");
 
-			[Fact]
+			[Test]
 			public async Task OnProperty_LambdaIgnoresCallInfo_DropsParameter()
 				=> await Verifier.VerifyCodeFixAsync(
 					"""

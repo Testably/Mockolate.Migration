@@ -10,7 +10,7 @@ using Range = Moq.Range;
 /// <summary>Argument matchers: It.IsAny / It.Is / It.IsRegex / It.IsInRange / It.IsNotNull / It.Ref / out.</summary>
 public class ArgumentMatcherTests
 {
-	[Fact]
+	[Test]
 	public async Task ItIs_Predicate_MatchesEvenAmounts()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -20,7 +20,7 @@ public class ArgumentMatcherTests
 		await That(dispenser.Object.Dispense("Dark", 3)).IsFalse();
 	}
 
-	[Fact]
+	[Test]
 	public async Task ItIsAny_MatchesAnyValue()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -30,7 +30,7 @@ public class ArgumentMatcherTests
 		await That(dispenser.Object.Dispense("Milk", 99)).IsTrue();
 	}
 
-	[Fact]
+	[Test]
 	public async Task ItIsInRange_Inclusive_MatchesBoundaries()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -41,7 +41,7 @@ public class ArgumentMatcherTests
 		await That(dispenser.Object.Dispense("Dark", 6)).IsFalse();
 	}
 
-	[Fact]
+	[Test]
 	public async Task ItIsNotNull_RejectsNull()
 	{
 		Mock<IChocolateFactory> factory = new();
@@ -51,7 +51,7 @@ public class ArgumentMatcherTests
 		await That(factory.Object.RegisterRecipe(null!)).IsFalse();
 	}
 
-	[Fact]
+	[Test]
 	public async Task ItIsRegex_MatchesPattern()
 	{
 		Mock<IChocolateFactory> factory = new();
@@ -61,7 +61,7 @@ public class ArgumentMatcherTests
 		await That(factory.Object.RegisterRecipe("MilkTruffle")).IsFalse();
 	}
 
-	[Fact]
+	[Test]
 	public async Task OutParameter_IsSetByItIsOut()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -74,7 +74,7 @@ public class ArgumentMatcherTests
 		await That(actual).IsEqualTo(7);
 	}
 
-	[Fact]
+	[Test]
 	public async Task PlainValue_IsUsedAsExactMatch()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -84,7 +84,7 @@ public class ArgumentMatcherTests
 		await That(dispenser.Object.Dispense("Milk", 4)).IsFalse();
 	}
 
-	[Fact]
+	[Test]
 	public async Task RefParameter_AnyMatch_AcceptsAnyRef()
 	{
 		Mock<IChocolateDispenser> dispenser = new();

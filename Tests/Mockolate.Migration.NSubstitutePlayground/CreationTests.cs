@@ -6,7 +6,7 @@ namespace Mockolate.Migration.NSubstitutePlayground;
 /// <summary>Substitute creation patterns.</summary>
 public class CreationTests
 {
-	[Fact]
+	[Test]
 	public async Task SubstituteFor_Class_CanConfigureVirtualMemberReturnValue()
 	{
 		// Configure a class substitute's virtual member to return a specific value.
@@ -16,7 +16,7 @@ public class CreationTests
 		await That(recipe.Name).IsEqualTo("Pralines");
 	}
 
-	[Fact]
+	[Test]
 	public async Task SubstituteFor_MultipleInterfaces_ImplementsBoth()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser, IChocolateAuditor>();
@@ -28,7 +28,7 @@ public class CreationTests
 		await That(auditor.AuditCount).IsEqualTo(0);
 	}
 
-	[Fact]
+	[Test]
 	public async Task SubstituteFor_SingleInterface_CreatesLooseSubstitute()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -37,7 +37,7 @@ public class CreationTests
 		await That(dispenser.Dispense("Dark", 1)).IsFalse();
 	}
 
-	[Fact]
+	[Test]
 	public async Task SubstituteForPartsOf_CallsRealVirtualMembers()
 	{
 		ChocolateRecipe recipe = Substitute.ForPartsOf<ChocolateRecipe>();
@@ -47,7 +47,7 @@ public class CreationTests
 		await That(recipe.Name).IsEqualTo("Truffle");
 	}
 
-	[Fact]
+	[Test]
 	public async Task SubstituteForTypeForwardingTo_ForwardsCallsToConcreteImpl()
 	{
 		IChocolateAuditor auditor = Substitute.ForTypeForwardingTo<IChocolateAuditor, StaticAuditor>();

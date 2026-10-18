@@ -7,7 +7,7 @@ public partial class NSubstituteCodeFixProviderTests
 {
 	public sealed class ClearReceivedCallsTests
 	{
-		[Fact]
+		[Test]
 		public async Task ClearReceivedCalls_IsRewrittenToClearAllInteractions()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -42,7 +42,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task UserDefinedClearReceivedCalls_IsNotRewritten()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""

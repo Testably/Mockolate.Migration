@@ -6,7 +6,7 @@ namespace Mockolate.Migration.NSubstitutePlayground;
 /// <summary>Event raising via the <c>Raise</c> helper.</summary>
 public class EventTests
 {
-	[Fact]
+	[Test]
 	public async Task Raise_CustomDelegate_InvokesSubscribedHandler()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -24,7 +24,7 @@ public class EventTests
 		await That(observedAmount).IsEqualTo(5);
 	}
 
-	[Fact]
+	[Test]
 	public async Task Raise_EventHandlerWithArgsOnly_PassesNullSender()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -36,7 +36,7 @@ public class EventTests
 		await That(observedLow).IsEqualTo(7);
 	}
 
-	[Fact]
+	[Test]
 	public async Task Raise_EventHandlerWithSenderAndArgs_PassesBoth()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -54,7 +54,7 @@ public class EventTests
 		await That(observedLow).IsEqualTo(2);
 	}
 
-	[Fact]
+	[Test]
 	public async Task ShopSubscribesOnConstruction_AndTracksDispensedAmounts()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();

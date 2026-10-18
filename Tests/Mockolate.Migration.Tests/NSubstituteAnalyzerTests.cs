@@ -5,7 +5,7 @@ namespace Mockolate.Migration.Tests;
 
 public class NSubstituteAnalyzerTests
 {
-	[Fact]
+	[Test]
 	public async Task ArgumentMatcher_IsNotFlagged()
 		=> await Verifier.VerifyAnalyzerAsync("""
 		                                      using NSubstitute;
@@ -24,7 +24,7 @@ public class NSubstituteAnalyzerTests
 			Verifier.Diagnostic(Rules.NSubstituteRule)
 				.WithLocation(0));
 
-	[Fact]
+	[Test]
 	public async Task SubstituteFor_ChainedMethodCall_FlagsOuterExpression()
 		=> await Verifier.VerifyAnalyzerAsync("""
 		                                      using NSubstitute;
@@ -42,7 +42,7 @@ public class NSubstituteAnalyzerTests
 			Verifier.Diagnostic(Rules.NSubstituteRule)
 				.WithLocation(0));
 
-	[Fact]
+	[Test]
 	public async Task SubstituteFor_IsFlagged()
 		=> await Verifier.VerifyAnalyzerAsync("""
 		                                      using NSubstitute;
@@ -60,7 +60,7 @@ public class NSubstituteAnalyzerTests
 			Verifier.Diagnostic(Rules.NSubstituteRule)
 				.WithLocation(0));
 
-	[Fact]
+	[Test]
 	public async Task SubstituteFor_NestedAsArgument_IsNotFlagged()
 		=> await Verifier.VerifyAnalyzerAsync("""
 		                                      using NSubstitute;
@@ -80,7 +80,7 @@ public class NSubstituteAnalyzerTests
 			Verifier.Diagnostic(Rules.NSubstituteRule)
 				.WithLocation(0));
 
-	[Fact]
+	[Test]
 	public async Task SubstituteFor_WithConstructorArguments_IsFlagged()
 		=> await Verifier.VerifyAnalyzerAsync("""
 		                                      using NSubstitute;
@@ -101,7 +101,7 @@ public class NSubstituteAnalyzerTests
 			Verifier.Diagnostic(Rules.NSubstituteRule)
 				.WithLocation(0));
 
-	[Fact]
+	[Test]
 	public async Task SubstituteFor_WithMultipleInterfaces_IsFlagged()
 		=> await Verifier.VerifyAnalyzerAsync("""
 		                                      using NSubstitute;
@@ -120,7 +120,7 @@ public class NSubstituteAnalyzerTests
 			Verifier.Diagnostic(Rules.NSubstituteRule)
 				.WithLocation(0));
 
-	[Fact]
+	[Test]
 	public async Task SubstituteForPartsOf_IsFlagged()
 		=> await Verifier.VerifyAnalyzerAsync("""
 		                                      using NSubstitute;
@@ -138,7 +138,7 @@ public class NSubstituteAnalyzerTests
 			Verifier.Diagnostic(Rules.NSubstituteRule)
 				.WithLocation(0));
 
-	[Fact]
+	[Test]
 	public async Task SubstituteForTypeForwardingTo_IsFlagged()
 		=> await Verifier.VerifyAnalyzerAsync("""
 		                                      using NSubstitute;

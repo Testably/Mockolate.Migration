@@ -7,7 +7,7 @@ namespace Mockolate.Migration.NSubstitutePlayground;
 /// <summary>Setup patterns: Returns / Throws / sequence Returns / ReturnsForAnyArgs / ThrowsForAnyArgs / AndDoes.</summary>
 public class SetupTests
 {
-	[Fact]
+	[Test]
 	public async Task NestedSubstituteSetup_ChainedAcrossDependentSubstitutes()
 	{
 		// NSubstitute auto-creates child substitutes for properties returning interfaces / classes.
@@ -18,7 +18,7 @@ public class SetupTests
 		await That(outer.Inner.Inner.Name).IsEqualTo("deep");
 	}
 
-	[Fact]
+	[Test]
 	public async Task PropertyAssignment_ReturnsLastSetValue()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -28,7 +28,7 @@ public class SetupTests
 		await That(dispenser.Name).IsEqualTo("ChocoMatic");
 	}
 
-	[Fact]
+	[Test]
 	public async Task PropertyReturns_SetsConfiguredValue()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -37,7 +37,7 @@ public class SetupTests
 		await That(dispenser.Name).IsEqualTo("Choco-9000");
 	}
 
-	[Fact]
+	[Test]
 	public async Task Returns_DirectValue_DispensesAndShopRecordsTotal()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -52,7 +52,7 @@ public class SetupTests
 		await That(shop.TotalSold).IsEqualTo(3);
 	}
 
-	[Fact]
+	[Test]
 	public async Task Returns_Factory_EvaluatesPerCall()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -67,7 +67,7 @@ public class SetupTests
 		await That(second).IsEqualTo(5);
 	}
 
-	[Fact]
+	[Test]
 	public async Task Returns_CallInfoFactory_DispatchesByArgument()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -79,7 +79,7 @@ public class SetupTests
 		await That(dispenser.Dispense("Dark", 0)).IsFalse();
 	}
 
-	[Fact]
+	[Test]
 	public async Task Returns_SequenceOfValues_ReturnsThemInOrder()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -90,7 +90,7 @@ public class SetupTests
 		await That(dispenser.CountByType("Dark")).IsEqualTo(3);
 	}
 
-	[Fact]
+	[Test]
 	public async Task ReturnsAndDoes_CombinesReturnAndSideEffect()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -103,7 +103,7 @@ public class SetupTests
 		await That(sideEffect).IsEqualTo(2);
 	}
 
-	[Fact]
+	[Test]
 	public async Task ReturnsAsync_CompletesWithValue()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -112,7 +112,7 @@ public class SetupTests
 		await That(await dispenser.DispenseAsync("Dark", 1)).IsTrue();
 	}
 
-	[Fact]
+	[Test]
 	public async Task ReturnsForAnyArgs_IgnoresArgumentsAtSetup()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -122,7 +122,7 @@ public class SetupTests
 		await That(dispenser.Dispense("White", 1)).IsTrue();
 	}
 
-	[Fact]
+	[Test]
 	public async Task Throws_GenericException_IsRaisedOnInvocation()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -132,7 +132,7 @@ public class SetupTests
 			.Throws<InvalidOperationException>();
 	}
 
-	[Fact]
+	[Test]
 	public async Task Throws_SpecificInstance_IsRaisedOnInvocation()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -143,7 +143,7 @@ public class SetupTests
 			.WithMessage("empty type");
 	}
 
-	[Fact]
+	[Test]
 	public async Task ThrowsForAnyArgs_AppliesEveryCall()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();

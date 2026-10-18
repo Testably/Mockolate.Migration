@@ -5,7 +5,7 @@ namespace Mockolate.Migration.Tests;
 
 public class MoqAnalyzerTests
 {
-	[Fact]
+	[Test]
 	public async Task MoqFactoryMethodEndingInMock_AsArgument_IsNotFlagged()
 		=> await Verifier.VerifyAnalyzerAsync("""
 		                                      using Moq;
@@ -30,7 +30,7 @@ public class MoqAnalyzerTests
 		                                      }
 		                                      """);
 
-	[Fact]
+	[Test]
 	public async Task MoqFactoryMethodEndingInMock_ChainedCall_IsFlagged()
 		=> await Verifier.VerifyAnalyzerAsync("""
 		                                      using Moq;
@@ -56,7 +56,7 @@ public class MoqAnalyzerTests
 			Verifier.Diagnostic(Rules.MoqRule)
 				.WithLocation(0));
 
-	[Fact]
+	[Test]
 	public async Task NewMockExplicit_IsFlagged()
 		=> await Verifier.VerifyAnalyzerAsync("""
 		                                      using Moq;
@@ -74,7 +74,7 @@ public class MoqAnalyzerTests
 			Verifier.Diagnostic(Rules.MoqRule)
 				.WithLocation(0));
 
-	[Fact]
+	[Test]
 	public async Task NewMockTargetTyped_IsFlagged()
 		=> await Verifier.VerifyAnalyzerAsync("""
 		                                      using Moq;
@@ -92,7 +92,7 @@ public class MoqAnalyzerTests
 			Verifier.Diagnostic(Rules.MoqRule)
 				.WithLocation(0));
 
-	[Fact]
+	[Test]
 	public async Task NonMoqInvocation_IsNotFlagged()
 		=> await Verifier.VerifyAnalyzerAsync("""
 		                                      public interface IFoo { int Bar(); }

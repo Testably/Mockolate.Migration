@@ -7,7 +7,7 @@ public partial class MoqCodeFixProviderTests
 {
 	public sealed class RaiseTests
 	{
-		[Fact]
+		[Test]
 		public async Task WithDerivedEventArgs_PrependsNullSender()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -44,7 +44,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task WithEventArgs_PrependsNullSender()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -79,7 +79,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task WithMultipleArgs_MigratesRaise()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -114,7 +114,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task WithSingleNonEventArgsValue_DoesNotPrependSender()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""

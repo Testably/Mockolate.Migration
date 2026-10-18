@@ -7,7 +7,7 @@ public partial class NSubstituteCodeFixProviderTests
 {
 	public sealed class AndDoesTests
 	{
-		[Fact]
+		[Test]
 		public async Task AndDoes_AfterMultiArgReturns_RewritesToDoOnFinalCall()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -42,7 +42,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task AndDoes_AfterReturns_RewritesToDo()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""

@@ -7,7 +7,7 @@ public partial class MoqCodeFixProviderTests
 {
 	public sealed class PropertyTests
 	{
-		[Fact]
+		[Test]
 		public async Task SetupGet_MigratesToSetupPropertyAccess()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -40,7 +40,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task VerifyGet_WithoutTimes_MigratesToGotAtLeastOnce()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -74,7 +74,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task VerifyGet_WithTimesOnce_MigratesToGotOnce()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -108,7 +108,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task VerifySet_WithLiteral_PassesValueDirectly()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -142,7 +142,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task VerifySet_WithTimesNever_MigratesToSetNever()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -176,7 +176,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task VerifySet_WithItIsAnyMatcher_PreservesMatcher()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -210,7 +210,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task VerifySet_WithItIsInRange_TransformsMatcher()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -244,7 +244,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task VerifySet_WithItIsInRangeExclusive_PreservesChainedMatcher()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -278,7 +278,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task VerifySet_WithItIsRegex_PreservesChainedMatcher()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -312,7 +312,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task VerifyGet_WithNestedProperty_UsesNavigationChain()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""

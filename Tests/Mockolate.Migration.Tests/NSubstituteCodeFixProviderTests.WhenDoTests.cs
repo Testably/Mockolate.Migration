@@ -7,7 +7,7 @@ public partial class NSubstituteCodeFixProviderTests
 {
 	public sealed class WhenDoTests
 	{
-		[Fact]
+		[Test]
 		public async Task WhenMethod_Do_RewritesToSetupDo()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -42,7 +42,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task WhenMethod_DoNotCallBase_RewritesToSkippingBaseClass()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -75,7 +75,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task WhenMethod_DoWithBareCallInfoReference_AddsTodoComment()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -111,7 +111,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task WhenMethod_WithArgMatcher_TransformsMatcher()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""

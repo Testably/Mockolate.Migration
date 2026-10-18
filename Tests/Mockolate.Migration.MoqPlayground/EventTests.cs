@@ -8,7 +8,7 @@ using It = Moq.It;
 /// <summary>Event subscription / raising / verification.</summary>
 public class EventTests
 {
-	[Fact]
+	[Test]
 	public async Task Raise_CustomDelegate_InvokesSubscribedHandler()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -26,7 +26,7 @@ public class EventTests
 		await That(observedAmount).IsEqualTo(5);
 	}
 
-	[Fact]
+	[Test]
 	public async Task Raise_EventHandlerStandard_PassesArgs()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -38,7 +38,7 @@ public class EventTests
 		await That(observed).IsEqualTo(2);
 	}
 
-	[Fact]
+	[Test]
 	public async Task ShopSubscribesOnConstruction_AndTracksDispensedAmounts()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -57,7 +57,7 @@ public class EventTests
 			Times.Once());
 	}
 
-	[Fact]
+	[Test]
 	public async Task VerifyAdd_RecordsSubscription()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -67,7 +67,7 @@ public class EventTests
 		dispenser.VerifyAdd(d => d.ChocolateDispensed += It.IsAny<ChocolateDispensedDelegate>(), Times.Once());
 	}
 
-	[Fact]
+	[Test]
 	public async Task VerifyRemove_RecordsUnsubscription()
 	{
 		Mock<IChocolateDispenser> dispenser = new();

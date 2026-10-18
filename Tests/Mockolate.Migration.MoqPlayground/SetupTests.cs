@@ -8,7 +8,7 @@ using It = Moq.It;
 /// <summary>Method/property setup patterns: Returns / Throws / Callback / Sequence / Async.</summary>
 public class SetupTests
 {
-	[Fact]
+	[Test]
 	public async Task Callback_ObservesArgumentsBeforeReturning()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -29,7 +29,7 @@ public class SetupTests
 		await That(observedAmount).IsEqualTo(4);
 	}
 
-	[Fact]
+	[Test]
 	public async Task NestedMockSetup_Recursive_ChainsThroughChildMock()
 	{
 		// Auto-mocking hierarchy: Moq creates child mocks for properties on demand.
@@ -42,7 +42,7 @@ public class SetupTests
 		await That(outer.Object.Inner.Inner.Name).IsEqualTo("deep");
 	}
 
-	[Fact]
+	[Test]
 	public async Task Returns_ArgumentBased_EvaluatesFromArgument()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -52,7 +52,7 @@ public class SetupTests
 		await That(dispenser.Object.Dispense("")).IsFalse();
 	}
 
-	[Fact]
+	[Test]
 	public async Task Returns_DirectValue_DispensesAndShopRecordsTotal()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -67,7 +67,7 @@ public class SetupTests
 		await That(shop.TotalSold).IsEqualTo(3);
 	}
 
-	[Fact]
+	[Test]
 	public async Task Returns_LazyFactory_EvaluatedOnEachCall()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -82,7 +82,7 @@ public class SetupTests
 		await That(second).IsEqualTo(5);
 	}
 
-	[Fact]
+	[Test]
 	public async Task ReturnsAsync_CompletesWithValue()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -91,7 +91,7 @@ public class SetupTests
 		await That(await dispenser.Object.DispenseAsync("Dark", 1)).IsTrue();
 	}
 
-	[Fact]
+	[Test]
 	public async Task ReturnsAsync_Factory_EvaluatesPerCall()
 	{
 		Mock<IChocolateFactory> factory = new();
@@ -105,7 +105,7 @@ public class SetupTests
 		await That(bar.Price).IsEqualTo(4.0m);
 	}
 
-	[Fact]
+	[Test]
 	public async Task SetupGet_Property_ReturnsConfiguredValue()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -114,7 +114,7 @@ public class SetupTests
 		await That(dispenser.Object.Name).IsEqualTo("Choco-9000");
 	}
 
-	[Fact]
+	[Test]
 	public async Task SetupProperty_TracksAssignmentsAndReturnsLastValue()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -125,7 +125,7 @@ public class SetupTests
 		await That(dispenser.Object.Name).IsEqualTo("ChocoMatic");
 	}
 
-	[Fact]
+	[Test]
 	public async Task SetupProperty_WithInitialValue_ReturnsThatBeforeAssignment()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -134,7 +134,7 @@ public class SetupTests
 		await That(dispenser.Object.Name).IsEqualTo("Default");
 	}
 
-	[Fact]
+	[Test]
 	public async Task SetupSequence_ReturnsValuesInOrder_ThenDefault()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -149,7 +149,7 @@ public class SetupTests
 		await That(dispenser.Object.Dispense("Dark", 1)).IsFalse();
 	}
 
-	[Fact]
+	[Test]
 	public async Task Throws_GenericException_IsRaisedOnInvocation()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -159,7 +159,7 @@ public class SetupTests
 			.Throws<InvalidOperationException>();
 	}
 
-	[Fact]
+	[Test]
 	public async Task Throws_SpecificInstance_IsRaisedOnInvocation()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -170,7 +170,7 @@ public class SetupTests
 			.WithMessage("empty type");
 	}
 
-	[Fact]
+	[Test]
 	public async Task ThrowsAsync_CompletesWithException()
 	{
 		Mock<IChocolateDispenser> dispenser = new();

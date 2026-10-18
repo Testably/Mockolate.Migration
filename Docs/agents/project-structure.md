@@ -10,8 +10,8 @@ Product code lives in `Source/`, tests and playgrounds in `Tests/`, the build pi
 | `Tests/Mockolate.Migration.Tests` | Analyzer and code fix tests, plus the verifier helpers in `Verifiers/`. |
 | `Tests/Mockolate.Migration.MoqPlayground` | Realistic Moq tests with the analyzers attached as analyzer references. |
 | `Tests/Mockolate.Migration.NSubstitutePlayground` | The same for NSubstitute. |
-| `Tests/Mockolate.Migration.Example.Tests` | A Mockolate example of the expected migration result (`MoqMigrationExamples.cs`). Not run by the pipeline. |
-| `Pipeline/Build.csproj` | The Nuke build, started by `build.ps1`, `build.sh` and `build.cmd`. |
+| `Tests/Mockolate.Migration.Example.Tests` | A Mockolate example of the expected migration result (`MoqMigrationExamples.cs`). |
+| `Pipeline/Build.csproj` | The Fallout build, started by `build.ps1`, `build.sh` and `build.cmd`. |
 
 Both analyzer projects set `EnforceExtendedAnalyzerRules` and `IsRoslynComponent` and are not packable on their own. The analyzer project exposes its internals to the code fixer project.
 
