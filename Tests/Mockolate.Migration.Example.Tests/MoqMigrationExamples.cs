@@ -7,7 +7,7 @@ namespace Mockolate.Migration.Example.Tests;
 
 public class MoqMigrationExamples
 {
-	[Fact]
+	[Test]
 	public async Task ExpectedMigrationResult()
 	{
 		IFoo mock = IFoo.CreateMock();
@@ -101,7 +101,7 @@ public class MoqMigrationExamples
 	/// <summary>
 	///     <see href="https://github.com/devlooped/moq/wiki/Quickstart" />
 	/// </summary>
-	[Fact]
+	[Test]
 	public async Task MoqCreation()
 	{
 #pragma warning disable MockolateM001
@@ -205,7 +205,7 @@ public class MoqMigrationExamples
 	///     left to the developer because Mockolate verifies order post-hoc rather than failing
 	///     at call time.
 	/// </summary>
-	[Fact]
+	[Test]
 	public async Task MoqCallSequence()
 	{
 #pragma warning disable MockolateM001
@@ -227,7 +227,7 @@ public class MoqMigrationExamples
 	///     the <c>InSequence</c> wrapper, and a <c>Verify.X.Then(...)</c> chain asserts the call
 	///     order after the fact.
 	/// </summary>
-	[Fact]
+	[Test]
 	public async Task MockolateCallOrdering()
 	{
 		IChocolateDispenser dispenser = IChocolateDispenser.CreateMock();

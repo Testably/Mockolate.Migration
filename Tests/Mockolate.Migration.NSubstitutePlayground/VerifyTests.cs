@@ -6,7 +6,7 @@ namespace Mockolate.Migration.NSubstitutePlayground;
 /// <summary>Verification patterns: Received / DidNotReceive / Received(n) / WithAnyArgs.</summary>
 public class VerifyTests
 {
-	[Fact]
+	[Test]
 	public void ClearReceivedCalls_resetsHistory()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -19,7 +19,7 @@ public class VerifyTests
 		dispenser.Received(1).Dispense(Arg.Any<string>(), Arg.Any<int>());
 	}
 
-	[Fact]
+	[Test]
 	public void DidNotReceive_method_wasNeverCalled()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -32,7 +32,7 @@ public class VerifyTests
 		dispenser.DidNotReceive().Dispense("Milk", Arg.Any<int>());
 	}
 
-	[Fact]
+	[Test]
 	public void DidNotReceiveWithAnyArgs_matchesNoInvocation()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -40,7 +40,7 @@ public class VerifyTests
 		dispenser.DidNotReceiveWithAnyArgs().Dispense(default!, default);
 	}
 
-	[Fact]
+	[Test]
 	public void Received_method_wasCalledOnce()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -53,7 +53,7 @@ public class VerifyTests
 		dispenser.Received().Dispense("Dark", 2);
 	}
 
-	[Fact]
+	[Test]
 	public void ReceivedExactCount_isHonored()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -66,7 +66,7 @@ public class VerifyTests
 		dispenser.Received(3).Dispense("Dark", Arg.Any<int>());
 	}
 
-	[Fact]
+	[Test]
 	public void ReceivedProperty_was_read()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -78,7 +78,7 @@ public class VerifyTests
 		_ = dispenser.Received(2).Name;
 	}
 
-	[Fact]
+	[Test]
 	public void ReceivedProperty_was_set()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -88,7 +88,7 @@ public class VerifyTests
 		dispenser.Received().Name = "Choco-2025";
 	}
 
-	[Fact]
+	[Test]
 	public void ReceivedWithAnyArgs_matchesAllInvocations()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();

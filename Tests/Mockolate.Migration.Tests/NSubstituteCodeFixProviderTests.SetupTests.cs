@@ -7,7 +7,7 @@ public partial class NSubstituteCodeFixProviderTests
 {
 	public sealed class SetupTests
 	{
-		[Fact]
+		[Test]
 		public async Task ArgAny_IsRewrittenToItIsAny()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -40,7 +40,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task ArgCompat_IsRewrittenToItMatchers()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -73,7 +73,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task ArgIsPredicate_IsRewrittenToItSatisfies()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -106,7 +106,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task ArgIsTypedValue_OnFourParameterMethod_PreservesItIs()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -139,7 +139,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task ArgIsValue_IsRewrittenToItIs()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -172,7 +172,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task ArgIsValue_OnMethodWithMoreThanFourParameters_KeepsItIs()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -205,7 +205,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task Method_WithLiteralOnFourParameterMethod_KeepsLiteralsDirect()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -238,7 +238,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task Method_WithLiteralsOnFiveParameterMethod_WrapsLiteralsInItIs()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -271,7 +271,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task Method_WithMixedArgsOnFiveParameterMethod_WrapsOnlyPlainValues()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -304,7 +304,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task MethodReturns_IsRewrittenToMockSetup()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -337,7 +337,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task MethodThrowsGeneric_IsRewrittenToMockSetup()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -374,7 +374,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task MultipleMatchers_AreAllRewritten()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -407,7 +407,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task PropertyReturns_IsRewrittenToMockSetup()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -440,7 +440,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task ReturnsForAnyArgs_AddsAnyParametersAndRenamesToReturns()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -473,7 +473,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task ReturnsForAnyArgsSequential_SplitsAndKeepsAnyParameters()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -506,7 +506,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task ReturnsNull_PreservesConfiguratorName()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -541,7 +541,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task SequentialPropertyReturns_AreSplitIntoChain()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -574,7 +574,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task SequentialReturns_AreSplitIntoChain()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -607,7 +607,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task ThrowsAsync_PreservesConfiguratorName()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -646,7 +646,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task ThrowsForAnyArgsGeneric_AddsAnyParametersAndRenamesToThrows()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -683,7 +683,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task ThrowsForAnyArgsSequential_SplitsAndKeepsAnyParameters()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -720,7 +720,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task ThrowsForAnyArgsWithException_AddsAnyParametersAndRenamesToThrows()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""

@@ -7,7 +7,7 @@ public partial class MoqCodeFixProviderTests
 {
 	public sealed class SequenceTests
 	{
-		[Fact]
+		[Test]
 		public async Task InSequence_OnPropertySetup_StripsInSequenceWrapper()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -42,7 +42,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task InSequence_OnSetup_StripsInSequenceWrapper()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -79,7 +79,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task InSequence_OnSetupProperty_StripsInSequenceWrapper()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -114,7 +114,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task InSequence_OnSetupSequence_StripsInSequenceWrapper()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -149,7 +149,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task InSequence_OnSetupWithReturnsAsync_StripsInSequenceWrapper()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -188,7 +188,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task InSequence_WithItMatcher_MigratesMatcher()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""

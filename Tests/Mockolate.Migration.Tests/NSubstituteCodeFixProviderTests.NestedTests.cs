@@ -7,7 +7,7 @@ public partial class NSubstituteCodeFixProviderTests
 {
 	public sealed class NestedTests
 	{
-		[Fact]
+		[Test]
 		public async Task NestedMethod_RewritesAndAddsTodo()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -43,7 +43,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task NestedProperty_RewritesAndAddsTodo()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -79,7 +79,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task NestedReceivedProperty_Got_RewritesAndAddsTodo()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -116,7 +116,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task NestedReceivedProperty_Set_RewritesAndAddsTodo()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -153,7 +153,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task NestedReceivedMethod_RewritesToVerifyOnNestedMock()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -190,7 +190,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task NestedRaiseEvent_RewritesAndAddsTodo()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""

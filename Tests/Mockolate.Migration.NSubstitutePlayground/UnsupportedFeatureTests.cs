@@ -13,7 +13,7 @@ namespace Mockolate.Migration.NSubstitutePlayground;
 public class UnsupportedFeatureTests
 {
 	// NOT YET MIGRATED: Arg.Do<T>(action) — capture each invocation's argument
-	[Fact]
+	[Test]
 	public async Task ArgDo_CapturesEveryInvocationArgument()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -27,7 +27,7 @@ public class UnsupportedFeatureTests
 	}
 
 	// NOT YET MIGRATED: Arg.Invoke<...> to call back into a delegate parameter
-	[Fact]
+	[Test]
 	public async Task ArgInvoke_CallsThroughDelegateParameter()
 	{
 		// Use a mini-substitute with an Action parameter to exercise Arg.Invoke.
@@ -45,7 +45,7 @@ public class UnsupportedFeatureTests
 	// local variables whose names shadow the receiver method's parameters (`type`, `amount`),
 	// which would produce illegal shadowing after rewrite — the migration bails to a TODO
 	// comment instead of producing broken code.
-	[Fact]
+	[Test]
 	public async Task CallInfo_ArgumentAccessInReturns_WithShadowingLocals()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -63,7 +63,7 @@ public class UnsupportedFeatureTests
 	}
 
 	// NOT YET MIGRATED: ClearSubstitute — removes setups and call history together
-	[Fact]
+	[Test]
 	public async Task ClearSubstitute_ResetsBothCallsAndSetups()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -78,7 +78,7 @@ public class UnsupportedFeatureTests
 	}
 
 	// NOT YET MIGRATED: Configure() — re-enter setup mode after calls have been recorded
-	[Fact]
+	[Test]
 	public async Task Configure_ChangesReturnAfterUse()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -91,7 +91,7 @@ public class UnsupportedFeatureTests
 	}
 
 	// NOT YET MIGRATED: Out parameters via Arg.Any<T>() with discard pattern
-	[Fact]
+	[Test]
 	public async Task OutParameter_IsSetByCallback()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -110,7 +110,7 @@ public class UnsupportedFeatureTests
 	}
 
 	// NOT YET MIGRATED: Received.InOrder for ordered cross-substitute verification
-	[Fact]
+	[Test]
 	public async Task ReceivedInOrder_OrdersAcrossSubstitutes()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -128,7 +128,7 @@ public class UnsupportedFeatureTests
 	}
 
 	// NOT YET MIGRATED: ReturnsNull / ReturnsNullForAnyArgs (extension methods)
-	[Fact]
+	[Test]
 	public async Task ReturnsNull_IsShortcutForReturnsDefault()
 	{
 		IChocolateFactory factory = Substitute.For<IChocolateFactory>();
@@ -139,7 +139,7 @@ public class UnsupportedFeatureTests
 	}
 
 	// NOT YET MIGRATED: ThrowsAsync extension on async setups
-	[Fact]
+	[Test]
 	public async Task ThrowsAsync_AppliesToAwaitedTask()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();

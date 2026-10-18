@@ -7,7 +7,7 @@ public partial class NSubstituteCodeFixProviderTests
 {
 	public sealed class RaiseTests
 	{
-		[Fact]
+		[Test]
 		public async Task PlusEqualsOnDelegateProperty_IsNotRewrittenAsRaise()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -42,7 +42,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task RaiseEvent_DelegateType_ForwardsArgsWithoutType()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -77,7 +77,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task RaiseEvent_NoArgs_RewritesToNullAndEmpty()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -112,7 +112,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task RaiseEvent_NoArgs_WithoutSystemUsing_EmitsFullyQualifiedEventArgs()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -145,7 +145,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task RaiseEvent_QualifiedNSubstituteAccess_IsRewritten()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -180,7 +180,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task RaiseEventWith_ArgsOnly_PrependsNullSender()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -217,7 +217,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task RaiseEventWith_SenderAndArgs_PassesThrough()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""

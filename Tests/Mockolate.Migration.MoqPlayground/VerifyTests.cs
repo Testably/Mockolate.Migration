@@ -9,7 +9,7 @@ using Range = Moq.Range;
 /// <summary>Verification patterns: Verify, VerifyGet, VerifySet, Times.*.</summary>
 public class VerifyTests
 {
-	[Fact]
+	[Test]
 	public void Verify_method_atLeast()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -22,7 +22,7 @@ public class VerifyTests
 		dispenser.Verify(d => d.Dispense("Dark", It.IsAny<int>()), Times.AtLeastOnce);
 	}
 
-	[Fact]
+	[Test]
 	public void Verify_method_atMost()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -34,7 +34,7 @@ public class VerifyTests
 		dispenser.Verify(d => d.Dispense("Dark", It.IsAny<int>()), Times.AtMostOnce);
 	}
 
-	[Fact]
+	[Test]
 	public void Verify_method_between()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -48,7 +48,7 @@ public class VerifyTests
 			Times.Between(1, 3, Range.Inclusive));
 	}
 
-	[Fact]
+	[Test]
 	public void Verify_method_exactCount()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -61,7 +61,7 @@ public class VerifyTests
 		dispenser.Verify(d => d.Dispense("Dark", It.IsAny<int>()), Times.Exactly(3));
 	}
 
-	[Fact]
+	[Test]
 	public void Verify_method_wasCalledOnce()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -74,7 +74,7 @@ public class VerifyTests
 		dispenser.Verify(d => d.Dispense("Dark", 2), Times.Once());
 	}
 
-	[Fact]
+	[Test]
 	public void Verify_method_wasNeverCalled()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -87,7 +87,7 @@ public class VerifyTests
 		dispenser.Verify(d => d.Dispense("Milk", It.IsAny<int>()), Times.Never);
 	}
 
-	[Fact]
+	[Test]
 	public void VerifyGet_property_wasRead()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -99,7 +99,7 @@ public class VerifyTests
 		dispenser.VerifyGet(d => d.Name, Times.Exactly(2));
 	}
 
-	[Fact]
+	[Test]
 	public void VerifySet_anyValue_isMatchedWithItIsAny()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -111,7 +111,7 @@ public class VerifyTests
 		dispenser.VerifySet(d => d.TotalDispensed = It.IsAny<int>(), Times.Exactly(2));
 	}
 
-	[Fact]
+	[Test]
 	public void VerifySet_property_wasAssigned()
 	{
 		Mock<IChocolateDispenser> dispenser = new();

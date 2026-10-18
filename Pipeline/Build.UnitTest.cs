@@ -18,6 +18,7 @@ partial class Build
 	[
 		Solution.Playground.Mockolate_Migration_MoqPlayground,
 		Solution.Playground.Mockolate_Migration_NSubstitutePlayground,
+		Solution.Tests.Mockolate_Migration_Example_Tests,
 		Solution.Tests.Mockolate_Migration_Tests,
 	];
 
@@ -30,23 +31,30 @@ partial class Build
 				EnvironmentInfo.IsWin
 					? []
 					: ["net48",];
+			(Project Project, string Framework)[] testRuns = UnitTestProjects
+				.SelectMany(project => (project.GetTargetFrameworks() ?? [])
+					.Except(excludedFrameworks)
+					.Select(framework => (project, framework)))
+				.ToArray();
+
+			Assert.NotEmpty(testRuns);
+
+			// global.json opts into the Microsoft.Testing.Platform, so `dotnet test` takes the project with `--project`.
 			DotNetTest(s => s
 					.SetConfiguration(Configuration)
 					.SetProcessEnvironmentVariable("DOTNET_CLI_UI_LANGUAGE", "en-US")
 					.EnableNoBuild()
-					.SetDataCollector("XPlat Code Coverage")
 					.SetResultsDirectory(TestResultsDirectory)
-					.CombineWith(
-						UnitTestProjects,
-						(settings, project) => settings
-							.SetProjectFile(project)
-							.CombineWith(
-								project.GetTargetFrameworks()?.Except(excludedFrameworks),
-								(frameworkSettings, framework) => frameworkSettings
-									.SetFramework(framework)
-									.AddLoggers($"trx;LogFileName={project.Name}_{framework}.trx")
-							)
-					), completeOnFailure: true
-			);
+					.CombineWith(testRuns,
+						(settings, testRun) => settings
+							.SetFramework(testRun.Framework)
+							.AddProcessAdditionalArguments(
+								$"--project \"{testRun.Project.Path}\"",
+								"--report-trx",
+								$"--report-trx-filename {testRun.Project.Name}_{testRun.Framework}.trx",
+								"--coverage",
+								"--coverage-output-format cobertura",
+								$"--coverage-output {testRun.Project.Name}_{testRun.Framework}.cobertura.xml")),
+				completeOnFailure: true);
 		});
 }

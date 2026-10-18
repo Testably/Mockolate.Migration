@@ -7,7 +7,7 @@ public partial class MoqCodeFixProviderTests
 {
 	public sealed class CallbackTests
 	{
-		[Fact]
+		[Test]
 		public async Task WithCallbackAfterThrows_MigratedToDo()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -46,7 +46,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task WithCallbackMultipleTypeArgs_MigratedToDoWithoutTypeArgs()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -83,7 +83,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task WithCallbackNoTypeArgs_MigratedToDo()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -118,7 +118,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task WithCallbackSingleTypeArg_MigratedToDoWithoutTypeArgs()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -155,7 +155,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task WithNestedSetup_PreservesNestedMockTodo()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""

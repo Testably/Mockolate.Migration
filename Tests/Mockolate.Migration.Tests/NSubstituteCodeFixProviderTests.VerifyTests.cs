@@ -7,7 +7,7 @@ public partial class NSubstituteCodeFixProviderTests
 {
 	public sealed class VerifyTests
 	{
-		[Fact]
+		[Test]
 		public async Task DidNotReceive_IsRewrittenToNever()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -41,7 +41,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task DidNotReceivePropertySet_RewritesToVerifySetNever()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -75,7 +75,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task DidNotReceivePropertySetWithArgAny_TranslatesMatcherWithoutWrapping()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -109,7 +109,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task DidNotReceiveWithAnyArgs_AddsAnyParametersAndNever()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -143,7 +143,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task Received_IsRewrittenToAtLeastOnce()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -179,7 +179,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task ReceivedExactCount_IsRewrittenToExactly()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -213,7 +213,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task ReceivedOne_IsRewrittenToOnce()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -247,7 +247,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task ReceivedPropertyGet_RewritesToVerifyGot()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -281,7 +281,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task ReceivedPropertySet_RewritesToVerifySet()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -315,7 +315,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task ReceivedWithAnyArgs_AddsAnyParameters()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -349,7 +349,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task ReceivedWithArgMatcher_TransformsMatcher()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""

@@ -8,7 +8,7 @@ using MockBehavior = Moq.MockBehavior;
 /// <summary>Mock construction patterns.</summary>
 public class CreationTests
 {
-	[Fact]
+	[Test]
 	public async Task ClassMockWithConstructorArgs_IsCreatedWithThoseArgs()
 	{
 		// ChocolateRecipe has a parameterless ctor, but Moq supports passing args to base.
@@ -18,7 +18,7 @@ public class CreationTests
 		await That(recipe.Object.Name).IsEqualTo("Praline");
 	}
 
-	[Fact]
+	[Test]
 	public async Task DefaultLooseMock_ReturnsDefaultsForUnsetMembers()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -29,7 +29,7 @@ public class CreationTests
 		await That(dispensed).IsFalse();
 	}
 
-	[Fact]
+	[Test]
 	public async Task ExplicitLooseMock_IsEquivalentToDefault()
 	{
 		Mock<IChocolateDispenser> dispenser = new(MockBehavior.Loose);
@@ -37,7 +37,7 @@ public class CreationTests
 		await That(dispenser.Object.Dispense("Dark", 1)).IsFalse();
 	}
 
-	[Fact]
+	[Test]
 	public async Task ObjectAccess_IsUsedToReachTheMockedInstance()
 	{
 		Mock<IChocolateFactory> factory = new();
@@ -48,7 +48,7 @@ public class CreationTests
 		await That(registered).IsTrue();
 	}
 
-	[Fact]
+	[Test]
 	public async Task StrictMock_ThrowsForUnsetMembers()
 	{
 		Mock<IChocolateDispenser> dispenser = new(MockBehavior.Strict);

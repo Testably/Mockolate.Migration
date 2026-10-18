@@ -7,7 +7,7 @@ public partial class MoqCodeFixProviderTests
 {
 	public sealed class NewMockTests
 	{
-		[Fact]
+		[Test]
 		public async Task AsPropertyInitializer_IsReplaced()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -32,7 +32,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task IsReplaced()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -63,7 +63,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task TargetTyped_IsReplaced()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -94,7 +94,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task WithExistingMockolateUsing_DoesNotDuplicateUsing()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -126,7 +126,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task WithGenericSetupCall_PreservesTypeArguments()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -159,7 +159,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task WithLooseMockBehavior_IsReplacedWithoutArgument()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -190,7 +190,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task WithNestedSetupCall_SetupIsNotRewritten()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -228,7 +228,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task WithObjectAccess_RemovesObjectProperty()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -261,7 +261,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task WithQualifiedStrictMockBehavior_IsReplacedWithThrowingWhenNotSetup()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -292,7 +292,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task WithSetupCall_MigratesSetup()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -325,7 +325,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task WithSetupCallMultipleArgs_MigratesSetup()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -358,7 +358,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task WithStrictMockBehavior_IsReplacedWithThrowingWhenNotSetup()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""

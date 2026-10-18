@@ -7,7 +7,7 @@ public partial class MoqCodeFixProviderTests
 {
 	public sealed class SetupTests
 	{
-		[Fact]
+		[Test]
 		public async Task AsyncMethod_WithReturnsAsync_MigratesSetup()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -42,7 +42,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task Method_WithExplicitItIsOnFiveParameterMethod_WrapsPlainValuesAndPreservesItIs()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -75,7 +75,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task Method_WithExplicitItIsOnFourParameterMethod_PreservesItIs()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -108,7 +108,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task Method_WithItIsIn_MigratedToIsOneOf()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -141,7 +141,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task Method_WithItIsInRangeExclusive_ChainsExclusive()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -174,7 +174,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task Method_WithItIsInRangeInclusive_DropsRangeArg()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -207,7 +207,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task Method_WithItIsLambda_MigratedToSatisfies()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -244,7 +244,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task Method_WithItIsRegex_MigratedToMatchesAsRegex()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -277,7 +277,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task Method_WithItIsTwoArgs_MigratedToIs()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -314,7 +314,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task Method_WithLiteralOnFourParameterMethod_KeepsLiteralsDirect()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -347,7 +347,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task Method_WithLiteralsOnFiveParameterMethod_WrapsLiteralsInItIs()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -380,7 +380,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task Method_WithOutParameter_MigratedToIsOut()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -415,7 +415,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task Method_WithRefItRefIsAny_MigratedToIsAnyRef()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -452,7 +452,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task Method_WithRefParameter_MigratedToIsRef()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -491,7 +491,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task Property_MigratesSetup()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -524,7 +524,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task Property_Nested_MigratesSetup()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -564,7 +564,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task SetupProperty_Nested_MigratesInitializeWithViaNavigationChain()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -600,7 +600,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task SetupProperty_NestedWithoutDefault_MigratesRegisterViaNavigationChain()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -636,7 +636,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task SetupProperty_WithDefault_MigratesInitializeWith()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -669,7 +669,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task SetupProperty_WithoutDefault_MigratesRegister()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -702,7 +702,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task SetupSequence_Method_WithReturnsAndThrowsChain_MigratesToSetup()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -743,7 +743,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task SetupSequence_Method_WithReturnsChain_MigratesToSetup()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -776,7 +776,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task SetupSequence_NestedMethod_UsesNavigationChain()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -818,7 +818,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task SetupSequence_Property_WithReturnsChain_MigratesToSetup()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""

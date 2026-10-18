@@ -9,7 +9,7 @@ using MockBehavior = Moq.MockBehavior;
 /// <summary>MockSequence + InSequence call ordering (Moq pattern).</summary>
 public class SequenceTests
 {
-	[Fact]
+	[Test]
 	public async Task MockSequence_StrictOrdering_IsHonored()
 	{
 		Mock<IChocolateDispenser> dispenser = new(MockBehavior.Strict);
@@ -24,7 +24,7 @@ public class SequenceTests
 		await That(dispenser.Object.Dispense("White", 3)).IsTrue();
 	}
 
-	[Fact]
+	[Test]
 	public async Task SetupSequence_ReturnsValuesInOrder()
 	{
 		Mock<IChocolateFactory> factory = new();

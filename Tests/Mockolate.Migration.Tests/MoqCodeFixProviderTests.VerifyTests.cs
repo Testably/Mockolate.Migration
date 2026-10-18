@@ -7,7 +7,7 @@ public partial class MoqCodeFixProviderTests
 {
 	public sealed class VerifyTests
 	{
-		[Fact]
+		[Test]
 		public async Task Method_WithItTransforms_MigratesItCalls()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -41,7 +41,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task NestedMethod_MigratesViaNavigationChain()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -78,7 +78,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task WithNoTimes_MigratesVerifyToAtLeastOnce()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -112,7 +112,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task WithTimesBetweenExclusive_AdjustsBounds()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -146,7 +146,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task WithTimesBetweenExclusive_NonLiteralBounds_AdjustsBoundsUsingAddSubtract()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -180,19 +180,19 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Theory]
-		[InlineData("Times.Never", ".Never()")]
-		[InlineData("Times.Never()", ".Never()")]
-		[InlineData("Times.Once", ".Once()")]
-		[InlineData("Times.Once()", ".Once()")]
-		[InlineData("Times.AtLeastOnce", ".AtLeastOnce()")]
-		[InlineData("Times.AtLeastOnce()", ".AtLeastOnce()")]
-		[InlineData("Times.AtLeast(3)", ".AtLeast(3)")]
-		[InlineData("Times.AtMostOnce", ".AtMostOnce()")]
-		[InlineData("Times.AtMostOnce()", ".AtMostOnce()")]
-		[InlineData("Times.AtMost(4)", ".AtMost(4)")]
-		[InlineData("Times.Exactly(5)", ".Exactly(5)")]
-		[InlineData("Times.Between(3, 5, Range.Inclusive)", ".Between(3, 5)")]
+		[Test]
+		[Arguments("Times.Never", ".Never()")]
+		[Arguments("Times.Never()", ".Never()")]
+		[Arguments("Times.Once", ".Once()")]
+		[Arguments("Times.Once()", ".Once()")]
+		[Arguments("Times.AtLeastOnce", ".AtLeastOnce()")]
+		[Arguments("Times.AtLeastOnce()", ".AtLeastOnce()")]
+		[Arguments("Times.AtLeast(3)", ".AtLeast(3)")]
+		[Arguments("Times.AtMostOnce", ".AtMostOnce()")]
+		[Arguments("Times.AtMostOnce()", ".AtMostOnce()")]
+		[Arguments("Times.AtMost(4)", ".AtMost(4)")]
+		[Arguments("Times.Exactly(5)", ".Exactly(5)")]
+		[Arguments("Times.Between(3, 5, Range.Inclusive)", ".Between(3, 5)")]
 		public async Task WithTimesProperty_MigratesVerify(string moqTimes, string mockolateTimes)
 			=> await Verifier.VerifyCodeFixAsync(
 				$$"""
@@ -226,7 +226,7 @@ public partial class MoqCodeFixProviderTests
 				  }
 				  """);
 
-		[Fact]
+		[Test]
 		public async Task WithUnrecognizedTimesArg_PreservesOriginalVerifyCall()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""

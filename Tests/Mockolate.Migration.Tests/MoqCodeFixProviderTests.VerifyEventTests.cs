@@ -7,7 +7,7 @@ public partial class MoqCodeFixProviderTests
 {
 	public sealed class VerifyEventTests
 	{
-		[Fact]
+		[Test]
 		public async Task VerifyAdd_OnDelegateProperty_DoesNotMigrateToSubscribed()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -42,7 +42,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task VerifyAdd_WithCustomDelegate_MigratesSubscribed()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -78,7 +78,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task VerifyAdd_WithNestedEvent_MigratesViaNavigationChain()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -117,7 +117,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task VerifyAdd_WithoutTimes_MigratesToSubscribedAtLeastOnce()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -153,7 +153,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task VerifyAdd_WithTimesOnce_MigratesToSubscribedOnce()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -189,7 +189,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task VerifyAdd_WithUntranslatableTimes_FallsBackToAtLeastOnce()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -227,7 +227,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task VerifyRemove_WithoutTimes_MigratesToUnsubscribedAtLeastOnce()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -263,7 +263,7 @@ public partial class MoqCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task VerifyRemove_WithTimesExactly_MigratesToUnsubscribedExactly()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""

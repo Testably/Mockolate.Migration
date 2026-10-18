@@ -7,7 +7,7 @@ public partial class NSubstituteCodeFixProviderTests
 {
 	public sealed class CreationTests
 	{
-		[Fact]
+		[Test]
 		public async Task SubstituteFor_AsExpressionBodiedReturn_IsReplaced()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -32,7 +32,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task SubstituteFor_AsPropertyInitializer_IsReplaced()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -57,7 +57,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task SubstituteFor_FullyQualified_IsReplaced()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -85,7 +85,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task SubstituteFor_GlobalQualified_IsReplaced()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -113,7 +113,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task SubstituteFor_IsReplaced()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -144,7 +144,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task SubstituteFor_WithConstructorArguments_PreservesArguments()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -181,7 +181,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task SubstituteFor_WithMultipleInterfaces_ChainsImplementing()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -214,7 +214,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task SubstituteFor_WithThreeInterfaces_ChainsImplementingTwice()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -249,7 +249,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task SubstituteForPartsOf_IsReplacedWithCreateMock()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -280,7 +280,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task SubstituteForTypeForwardingTo_WrapsNewInstance()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -313,7 +313,7 @@ public partial class NSubstituteCodeFixProviderTests
 				}
 				""");
 
-		[Fact]
+		[Test]
 		public async Task WithExistingMockolateUsing_DoesNotDuplicateUsing()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""

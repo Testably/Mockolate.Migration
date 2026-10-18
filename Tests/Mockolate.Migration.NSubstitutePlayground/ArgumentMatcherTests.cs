@@ -6,7 +6,7 @@ namespace Mockolate.Migration.NSubstitutePlayground;
 /// <summary>Argument matchers: Arg.Any / Arg.Is / Arg.Compat. (Arg.Do/Arg.Invoke are in the Unsupported file.)</summary>
 public class ArgumentMatcherTests
 {
-	[Fact]
+	[Test]
 	public async Task ArgAny_MatchesAnyValue()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -16,7 +16,7 @@ public class ArgumentMatcherTests
 		await That(dispenser.Dispense("Milk", 99)).IsTrue();
 	}
 
-	[Fact]
+	[Test]
 	public async Task ArgCompat_AnyAndIs_WorkLikePlainArg()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -26,7 +26,7 @@ public class ArgumentMatcherTests
 		await That(dispenser.Dispense("Dark", 0)).IsFalse();
 	}
 
-	[Fact]
+	[Test]
 	public async Task ArgIs_Predicate_MatchesEvenAmounts()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -36,7 +36,7 @@ public class ArgumentMatcherTests
 		await That(dispenser.Dispense("Dark", 3)).IsFalse();
 	}
 
-	[Fact]
+	[Test]
 	public async Task ArgIs_Value_MatchesExactValue()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -46,7 +46,7 @@ public class ArgumentMatcherTests
 		await That(dispenser.Dispense("Dark", 3)).IsFalse();
 	}
 
-	[Fact]
+	[Test]
 	public async Task PlainValue_IsUsedAsExactMatch()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();

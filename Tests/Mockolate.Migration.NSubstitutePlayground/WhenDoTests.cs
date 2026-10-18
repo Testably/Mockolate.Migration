@@ -6,7 +6,7 @@ namespace Mockolate.Migration.NSubstitutePlayground;
 /// <summary>When/Do — used to attach side effects to void members and to substitute for partial mocks.</summary>
 public class WhenDoTests
 {
-	[Fact]
+	[Test]
 	public async Task When_DoNotCallBase_DisablesPartialBaseInvocation()
 	{
 		// ForPartsOf normally calls real virtual methods. DoNotCallBase suppresses that.
@@ -20,7 +20,7 @@ public class WhenDoTests
 		await That(recipe.Name).IsEqualTo("Praline");
 	}
 
-	[Fact]
+	[Test]
 	public async Task When_VoidMethod_RunsCallback()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -33,7 +33,7 @@ public class WhenDoTests
 		await That(captured).IsEqualTo("ran");
 	}
 
-	[Fact]
+	[Test]
 	public async Task WhenForAnyArgs_VoidMethod_RunsCallbackForAnyInvocation()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
