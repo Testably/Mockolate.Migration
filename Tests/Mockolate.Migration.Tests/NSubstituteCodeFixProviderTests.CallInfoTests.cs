@@ -16,6 +16,8 @@ public partial class NSubstituteCodeFixProviderTests
 					using System;
 					using NSubstitute;
 
+					namespace MyCode;
+
 					public interface IFoo { int Bar(int x, int y); }
 
 					public class Tests
@@ -32,6 +34,8 @@ public partial class NSubstituteCodeFixProviderTests
 					using NSubstitute;
 					using Mockolate;
 
+					namespace MyCode;
+
 					public interface IFoo { int Bar(int x, int y); }
 
 					public class Tests
@@ -40,7 +44,7 @@ public partial class NSubstituteCodeFixProviderTests
 						{
 							var sub = IFoo.CreateMock();
 							// TODO(MockolateM002): review CallInfo usage manually — Mockolate's Do/Returns take typed parameters, not CallInfo
-							sub.Mock.Setup.Bar(0, 0).Returns(0).Do(call => Console.WriteLine(call.Arg<int>()));
+							sub.Mock.Setup.Bar(0, 0).Returns(0).Do(call {|CS1593:=>|} Console.WriteLine(call.Arg<int>()));
 						}
 					}
 					""");
@@ -50,6 +54,8 @@ public partial class NSubstituteCodeFixProviderTests
 				=> await Verifier.VerifyCodeFixAsync(
 					"""
 					using NSubstitute;
+
+					namespace MyCode;
 
 					public interface IFoo { bool TryGet(string key, out int value); }
 
@@ -66,6 +72,8 @@ public partial class NSubstituteCodeFixProviderTests
 					using NSubstitute;
 					using Mockolate;
 
+					namespace MyCode;
+
 					public interface IFoo { bool TryGet(string key, out int value); }
 
 					public class Tests
@@ -74,7 +82,7 @@ public partial class NSubstituteCodeFixProviderTests
 						{
 							var sub = IFoo.CreateMock();
 							// TODO(MockolateM002): review CallInfo usage manually — Mockolate's Do/Returns take typed parameters, not CallInfo
-							sub.Mock.Setup.TryGet("k", out _).Returns(true).Do(call => { call[1] = 42; });
+							sub.Mock.Setup.TryGet({|CS1503:"k"|}, out {|CS1615:_|}).Returns(true).Do(call {|CS1593:=>|} { call[1] = 42; });
 						}
 					}
 					""");
@@ -84,6 +92,8 @@ public partial class NSubstituteCodeFixProviderTests
 				=> await Verifier.VerifyCodeFixAsync(
 					"""
 					using NSubstitute;
+
+					namespace MyCode;
 
 					public interface IFoo { int Bar(int x, string y); }
 
@@ -100,6 +110,8 @@ public partial class NSubstituteCodeFixProviderTests
 					"""
 					using NSubstitute;
 					using Mockolate;
+
+					namespace MyCode;
 
 					public interface IFoo { int Bar(int x, string y); }
 
@@ -121,6 +133,8 @@ public partial class NSubstituteCodeFixProviderTests
 					using System;
 					using NSubstitute;
 
+					namespace MyCode;
+
 					public interface IFoo { int Bar(int x, string y); }
 
 					public class Tests
@@ -136,6 +150,8 @@ public partial class NSubstituteCodeFixProviderTests
 					using System;
 					using NSubstitute;
 					using Mockolate;
+
+					namespace MyCode;
 
 					public interface IFoo { int Bar(int x, string y); }
 
@@ -156,6 +172,8 @@ public partial class NSubstituteCodeFixProviderTests
 					using System;
 					using NSubstitute;
 
+					namespace MyCode;
+
 					public interface IFoo { int Bar(int x, string y); }
 
 					public class Tests
@@ -171,6 +189,8 @@ public partial class NSubstituteCodeFixProviderTests
 					using System;
 					using NSubstitute;
 					using Mockolate;
+
+					namespace MyCode;
 
 					public interface IFoo { int Bar(int x, string y); }
 
@@ -194,6 +214,8 @@ public partial class NSubstituteCodeFixProviderTests
 					using System;
 					using NSubstitute;
 
+					namespace MyCode;
+
 					public interface IFoo { void Bar(int x, string y); }
 
 					public class Tests
@@ -209,6 +231,8 @@ public partial class NSubstituteCodeFixProviderTests
 					using System;
 					using NSubstitute;
 					using Mockolate;
+
+					namespace MyCode;
 
 					public interface IFoo { void Bar(int x, string y); }
 
@@ -228,6 +252,8 @@ public partial class NSubstituteCodeFixProviderTests
 					"""
 					using NSubstitute;
 
+					namespace MyCode;
+
 					public interface IFoo { void Bar(int x, string y); }
 
 					public class Tests
@@ -243,6 +269,8 @@ public partial class NSubstituteCodeFixProviderTests
 					"""
 					using NSubstitute;
 					using Mockolate;
+
+					namespace MyCode;
 
 					public interface IFoo { void Bar(int x, string y); }
 
@@ -266,6 +294,8 @@ public partial class NSubstituteCodeFixProviderTests
 					"""
 					using NSubstitute;
 
+					namespace MyCode;
+
 					public interface IFoo { int Bar(int x, string y); }
 
 					public class Tests
@@ -280,6 +310,8 @@ public partial class NSubstituteCodeFixProviderTests
 					"""
 					using NSubstitute;
 					using Mockolate;
+
+					namespace MyCode;
 
 					public interface IFoo { int Bar(int x, string y); }
 
@@ -299,6 +331,8 @@ public partial class NSubstituteCodeFixProviderTests
 					"""
 					using NSubstitute;
 
+					namespace MyCode;
+
 					public interface IFoo { string Trigger(string @event); }
 
 					public class Tests
@@ -313,6 +347,8 @@ public partial class NSubstituteCodeFixProviderTests
 					"""
 					using NSubstitute;
 					using Mockolate;
+
+					namespace MyCode;
 
 					public interface IFoo { string Trigger(string @event); }
 
@@ -332,6 +368,8 @@ public partial class NSubstituteCodeFixProviderTests
 					"""
 					using NSubstitute;
 
+					namespace MyCode;
+
 					public interface IFoo { int Bar(int x, string y); }
 
 					public class Tests
@@ -346,6 +384,8 @@ public partial class NSubstituteCodeFixProviderTests
 					"""
 					using NSubstitute;
 					using Mockolate;
+
+					namespace MyCode;
 
 					public interface IFoo { int Bar(int x, string y); }
 
@@ -366,6 +406,8 @@ public partial class NSubstituteCodeFixProviderTests
 					using NSubstitute;
 					using NSubstitute.Core;
 
+					namespace MyCode;
+
 					public interface IFoo { int Bar(int x); }
 
 					public class Tests
@@ -384,6 +426,8 @@ public partial class NSubstituteCodeFixProviderTests
 					using NSubstitute.Core;
 					using Mockolate;
 
+					namespace MyCode;
+
 					public interface IFoo { int Bar(int x); }
 
 					public class Tests
@@ -394,7 +438,7 @@ public partial class NSubstituteCodeFixProviderTests
 						{
 							var sub = IFoo.CreateMock();
 							// TODO(MockolateM002): review CallInfo usage manually — Mockolate's Do/Returns take typed parameters, not CallInfo
-							sub.Mock.Setup.Bar(0).Returns(call => Helper(call));
+							sub.Mock.Setup.Bar(0).Returns(call => Helper({|CS1503:call|}));
 						}
 					}
 					""");
@@ -404,6 +448,8 @@ public partial class NSubstituteCodeFixProviderTests
 				=> await Verifier.VerifyCodeFixAsync(
 					"""
 					using NSubstitute;
+
+					namespace MyCode;
 
 					public interface IFoo { int Bar(int x); }
 
@@ -424,6 +470,8 @@ public partial class NSubstituteCodeFixProviderTests
 					using NSubstitute;
 					using Mockolate;
 
+					namespace MyCode;
+
 					public interface IFoo { int Bar(int x); }
 
 					public class Tests
@@ -435,7 +483,7 @@ public partial class NSubstituteCodeFixProviderTests
 							sub.Mock.Setup.Bar(0).Returns(call =>
 							{
 								foreach (var x in new[] { 1, 2 }) { _ = x; }
-								return call.ArgAt<int>(0);
+								return call.{|CS1061:ArgAt<int>|}(0);
 							});
 						}
 					}
@@ -446,6 +494,8 @@ public partial class NSubstituteCodeFixProviderTests
 				=> await Verifier.VerifyCodeFixAsync(
 					"""
 					using NSubstitute;
+
+					namespace MyCode;
 
 					public interface IFoo { bool Dispense(string type, int amount); }
 
@@ -467,6 +517,8 @@ public partial class NSubstituteCodeFixProviderTests
 					using NSubstitute;
 					using Mockolate;
 
+					namespace MyCode;
+
 					public interface IFoo { bool Dispense(string type, int amount); }
 
 					public class Tests
@@ -475,7 +527,7 @@ public partial class NSubstituteCodeFixProviderTests
 						{
 							var sub = IFoo.CreateMock();
 							// TODO(MockolateM002): review CallInfo usage manually — Mockolate's Do/Returns take typed parameters, not CallInfo
-							sub.Mock.Setup.Dispense("Dark", 1).Returns(call =>
+							sub.Mock.Setup.Dispense("Dark", 1).Returns(call {|CS1593:=>|}
 							{
 								string type = call.Arg<string>();
 								int amount = call.ArgAt<int>(1);
@@ -491,6 +543,8 @@ public partial class NSubstituteCodeFixProviderTests
 					"""
 					using System;
 					using NSubstitute;
+
+					namespace MyCode;
 
 					public interface IFoo { int Bar(int x); }
 
@@ -512,6 +566,8 @@ public partial class NSubstituteCodeFixProviderTests
 					using NSubstitute;
 					using Mockolate;
 
+					namespace MyCode;
+
 					public interface IFoo { int Bar(int x); }
 
 					public class Tests
@@ -523,7 +579,7 @@ public partial class NSubstituteCodeFixProviderTests
 							sub.Mock.Setup.Bar(0).Returns(call =>
 							{
 								Action<int> a = (x) => Console.WriteLine(x);
-								return call.ArgAt<int>(0);
+								return call.{|CS1061:ArgAt<int>|}(0);
 							});
 						}
 					}
@@ -535,6 +591,8 @@ public partial class NSubstituteCodeFixProviderTests
 					"""
 					using System;
 					using NSubstitute;
+
+					namespace MyCode;
 
 					public interface IFoo { int Bar(int x); }
 
@@ -551,6 +609,8 @@ public partial class NSubstituteCodeFixProviderTests
 					using System;
 					using NSubstitute;
 					using Mockolate;
+
+					namespace MyCode;
 
 					public interface IFoo { int Bar(int x); }
 
@@ -570,6 +630,8 @@ public partial class NSubstituteCodeFixProviderTests
 					"""
 					using NSubstitute;
 
+					namespace MyCode;
+
 					public interface IFoo { int Bar(int x); }
 
 					public class Tests
@@ -577,13 +639,15 @@ public partial class NSubstituteCodeFixProviderTests
 						public void Test()
 						{
 							var sub = [|Substitute.For<IFoo>()|];
-							sub.Bar(0).Returns(1, call => call.ArgAt<int>(0), 3);
+							sub.Bar(0).Returns(1, call {|CS1660:=>|} call.ArgAt<int>(0), 3);
 						}
 					}
 					""",
 					"""
 					using NSubstitute;
 					using Mockolate;
+
+					namespace MyCode;
 
 					public interface IFoo { int Bar(int x); }
 
@@ -603,6 +667,8 @@ public partial class NSubstituteCodeFixProviderTests
 					"""
 					using NSubstitute;
 
+					namespace MyCode;
+
 					public interface IFoo { int Value { get; } }
 
 					public class Tests
@@ -617,6 +683,8 @@ public partial class NSubstituteCodeFixProviderTests
 					"""
 					using NSubstitute;
 					using Mockolate;
+
+					namespace MyCode;
 
 					public interface IFoo { int Value { get; } }
 

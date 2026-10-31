@@ -14,6 +14,8 @@ public partial class MoqCodeFixProviderTests
 				using Moq;
 				using System;
 
+				namespace MyCode;
+
 				public interface IFoo { Action MyHandler { get; set; } }
 
 				public class Tests
@@ -30,6 +32,8 @@ public partial class MoqCodeFixProviderTests
 				using System;
 				using Mockolate;
 
+				namespace MyCode;
+
 				public interface IFoo { Action MyHandler { get; set; } }
 
 				public class Tests
@@ -37,7 +41,7 @@ public partial class MoqCodeFixProviderTests
 					public void Test()
 					{
 						var mock = IFoo.CreateMock();
-						mock.VerifyAdd(m => m.MyHandler += It.IsAny<Action>(), Times.AtLeastOnce);
+						mock.{|CS1061:VerifyAdd|}(m => m.MyHandler += It.IsAny<Action>(), Times.AtLeastOnce);
 					}
 				}
 				""");
@@ -47,6 +51,8 @@ public partial class MoqCodeFixProviderTests
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
 				using Moq;
+
+				namespace MyCode;
 
 				public delegate void FooDelegate(string type, int amount);
 				public interface IFoo { event FooDelegate MyEvent; }
@@ -64,6 +70,8 @@ public partial class MoqCodeFixProviderTests
 				using Moq;
 				using Mockolate;
 				using Mockolate.Verify;
+
+				namespace MyCode;
 
 				public delegate void FooDelegate(string type, int amount);
 				public interface IFoo { event FooDelegate MyEvent; }
@@ -85,6 +93,8 @@ public partial class MoqCodeFixProviderTests
 				using Moq;
 				using System;
 
+				namespace MyCode;
+
 				public interface IBar { event EventHandler MyEvent; }
 				public interface IFoo { IBar Child { get; } }
 
@@ -103,6 +113,8 @@ public partial class MoqCodeFixProviderTests
 				using Mockolate;
 				using Mockolate.Verify;
 
+				namespace MyCode;
+
 				public interface IBar { event EventHandler MyEvent; }
 				public interface IFoo { IBar Child { get; } }
 
@@ -112,7 +124,7 @@ public partial class MoqCodeFixProviderTests
 					{
 						var mock = IFoo.CreateMock();
 						// TODO(MockolateM001): register the nested 'mock.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
-						mock.Child.Mock.Verify.MyEvent.Subscribed().Never();
+						{|CS1929:mock.Child|}.Mock.Verify.MyEvent.Subscribed().Never();
 					}
 				}
 				""");
@@ -123,6 +135,8 @@ public partial class MoqCodeFixProviderTests
 				"""
 				using Moq;
 				using System;
+
+				namespace MyCode;
 
 				public interface IFoo { event EventHandler MyEvent; }
 
@@ -140,6 +154,8 @@ public partial class MoqCodeFixProviderTests
 				using System;
 				using Mockolate;
 				using Mockolate.Verify;
+
+				namespace MyCode;
 
 				public interface IFoo { event EventHandler MyEvent; }
 
@@ -160,6 +176,8 @@ public partial class MoqCodeFixProviderTests
 				using Moq;
 				using System;
 
+				namespace MyCode;
+
 				public interface IFoo { event EventHandler MyEvent; }
 
 				public class Tests
@@ -176,6 +194,8 @@ public partial class MoqCodeFixProviderTests
 				using System;
 				using Mockolate;
 				using Mockolate.Verify;
+
+				namespace MyCode;
 
 				public interface IFoo { event EventHandler MyEvent; }
 
@@ -196,6 +216,8 @@ public partial class MoqCodeFixProviderTests
 				using Moq;
 				using System;
 
+				namespace MyCode;
+
 				public interface IFoo { event EventHandler MyEvent; }
 
 				public class Tests
@@ -213,6 +235,8 @@ public partial class MoqCodeFixProviderTests
 				using System;
 				using Mockolate;
 
+				namespace MyCode;
+
 				public interface IFoo { event EventHandler MyEvent; }
 
 				public class Tests
@@ -222,7 +246,7 @@ public partial class MoqCodeFixProviderTests
 						var times = Times.Once();
 						var mock = IFoo.CreateMock();
 						// TODO(MockolateM001): translate the Times argument 'times' manually
-						mock.VerifyAdd(m => m.MyEvent += It.IsAny<EventHandler>(), times);
+						mock.{|CS1061:VerifyAdd|}(m => m.MyEvent += It.IsAny<EventHandler>(), times);
 					}
 				}
 				""");
@@ -233,6 +257,8 @@ public partial class MoqCodeFixProviderTests
 				"""
 				using Moq;
 				using System;
+
+				namespace MyCode;
 
 				public interface IFoo { event EventHandler MyEvent; }
 
@@ -250,6 +276,8 @@ public partial class MoqCodeFixProviderTests
 				using System;
 				using Mockolate;
 				using Mockolate.Verify;
+
+				namespace MyCode;
 
 				public interface IFoo { event EventHandler MyEvent; }
 
@@ -270,6 +298,8 @@ public partial class MoqCodeFixProviderTests
 				using Moq;
 				using System;
 
+				namespace MyCode;
+
 				public interface IFoo { event EventHandler MyEvent; }
 
 				public class Tests
@@ -286,6 +316,8 @@ public partial class MoqCodeFixProviderTests
 				using System;
 				using Mockolate;
 				using Mockolate.Verify;
+
+				namespace MyCode;
 
 				public interface IFoo { event EventHandler MyEvent; }
 
@@ -306,6 +338,8 @@ public partial class MoqCodeFixProviderTests
 				using Moq;
 				using System;
 
+				namespace MyCode;
+
 				public interface IFoo { event EventHandler MyEvent; }
 
 				public class Tests
@@ -322,6 +356,8 @@ public partial class MoqCodeFixProviderTests
 				using System;
 				using Mockolate;
 
+				namespace MyCode;
+
 				public interface IFoo { event EventHandler MyEvent; }
 
 				public class Tests
@@ -330,7 +366,7 @@ public partial class MoqCodeFixProviderTests
 					{
 						var mock = IFoo.CreateMock();
 						// TODO(MockolateM001): translate the Times argument 'times' manually
-						mock.VerifyRemove(m => m.MyEvent -= It.IsAny<EventHandler>(), times);
+						mock.{|CS1061:VerifyRemove|}(m => m.MyEvent -= It.IsAny<EventHandler>(), times);
 					}
 				}
 				""");
