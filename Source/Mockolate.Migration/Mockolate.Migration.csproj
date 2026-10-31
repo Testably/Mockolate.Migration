@@ -2,6 +2,7 @@
 
 	<PropertyGroup>
 		<RootNamespace>Mockolate.Migration</RootNamespace>
+		<DevelopmentDependency>true</DevelopmentDependency>
 	</PropertyGroup>
 
 	<ItemGroup>
