@@ -223,7 +223,7 @@ public partial class MoqCodeFixProviderTests
 					{
 						var mock = IFoo.CreateMock();
 						// TODO(MockolateM001): register the nested 'mock.Child.GrandChild' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
-						mock.Child.GrandChild.Mock.Bar(It.IsAny<string>()).Returns(true);
+						mock.Child.GrandChild.Mock.Setup.Bar(It.IsAny<string>()).Returns(true);
 					}
 				}
 				""");
