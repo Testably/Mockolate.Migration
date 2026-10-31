@@ -54,4 +54,4 @@ For day-to-day work, `dotnet build` and `dotnet test` are enough.
 
 ## Documentation
 
-`README.md` is the user documentation. `Docs/pages/00-index.md` embeds it through the `{README}` placeholder and is published to the docs site at https://docs.testably.org/Mockolate/Migration, so keep the README self-contained. Author and agent docs live in `Docs/agents/` and are not published.
+`README.md` is the NuGet and GitHub landing page; keep it plain Markdown and self-contained. The docs site page for the migration lives in the Mockolate repository (`Docs/pages/migration/11-migration.md`) and is written separately, so update it there when the supported migrations change. Author and agent docs live in `Docs/agents/` and are not published.
