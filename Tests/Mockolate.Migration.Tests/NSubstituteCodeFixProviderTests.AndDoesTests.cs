@@ -37,7 +37,7 @@ public partial class NSubstituteCodeFixProviderTests
 					{
 						var sub = IFoo.CreateMock();
 						int counter = 0;
-						sub.Mock.Setup.Bar(1).Returns(1).Returns(2).Returns(3).Do(() => counter++);
+						sub.Mock.Setup.Bar(1).Returns(1).Returns(2).Returns(3).For(int.MaxValue).Do(() => counter++);
 					}
 				}
 				""");

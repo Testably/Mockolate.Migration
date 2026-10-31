@@ -136,7 +136,7 @@ sub.Changed += Raise.EventWith(EventArgs.Empty);
 
 // After (Mockolate)
 var sub = IFoo.CreateMock();
-sub.Mock.Setup.Compute(0).Returns(1).Returns(2).Returns(3);
+sub.Mock.Setup.Compute(0).Returns(1).Returns(2).Returns(3).Forever();
 sub.Mock.Setup.Reset().Do(() => counter++);
 sub.Mock.Raise.Changed(null, EventArgs.Empty);
 ```
@@ -166,7 +166,7 @@ overloads instead take the method's parameters directly, so the migration rewrit
 | `Substitute.ForPartsOf<MyClass>()`                         | `MyClass.CreateMock()` (Mockolate calls base by default)                               |
 | `Substitute.ForTypeForwardingTo<TInterface, TClass>(args)` | `TInterface.CreateMock().Wrapping(new TClass(args))`                                   |
 | `sub.Method(args).Returns(v)`                              | `sub.Mock.Setup.Method(args).Returns(v)`                                               |
-| `sub.Method(args).Returns(v1, v2, v3)`                     | `sub.Mock.Setup.Method(args).Returns(v1).Returns(v2).Returns(v3)`                      |
+| `sub.Method(args).Returns(v1, v2, v3)`                     | `sub.Mock.Setup.Method(args).Returns(v1).Returns(v2).Returns(v3).Forever()`            |
 | `sub.Method(args).Throws<E>()` / `Throws(ex)`              | `sub.Mock.Setup.Method(args).Throws<E>()` / `.Throws(ex)`                              |
 | `sub.Method(args).ReturnsForAnyArgs(v)`                    | `sub.Mock.Setup.Method(args).AnyParameters().Returns(v)`                               |
 | `sub.Method(args).ThrowsForAnyArgs<E>()`                   | `sub.Mock.Setup.Method(args).AnyParameters().Throws<E>()`                              |

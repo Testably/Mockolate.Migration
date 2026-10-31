@@ -592,7 +592,7 @@ public partial class NSubstituteCodeFixProviderTests
 						public void Test()
 						{
 							var sub = IFoo.CreateMock();
-							sub.Mock.Setup.Bar(0).Returns(1).Returns((int x) => x).Returns(3);
+							sub.Mock.Setup.Bar(0).Returns(1).Returns((int x) => x).Returns(3).Forever();
 						}
 					}
 					""");
