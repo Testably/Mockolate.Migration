@@ -811,7 +811,7 @@ public partial class MoqCodeFixProviderTests
 					{
 						var mock = IFoo.CreateMock();
 						// TODO(MockolateM001): register the nested 'mock.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
-						mock.Child.Mock.GetCount()
+						mock.Child.Mock.Setup.GetCount()
 							.Returns(1)
 							.Throws<InvalidOperationException>();
 					}

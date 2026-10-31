@@ -504,7 +504,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 			}
 			else
 			{
-				// Nested setup: mock.Nav1.Nav2.Mock.Method(args)
+				// Nested setup: mock.Nav1.Nav2.Mock.Setup.Method(args)
 				ExpressionSyntax navChain = mockReceiver;
 				foreach (SimpleNameSyntax nav in navigationChain)
 				{
@@ -518,9 +518,13 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 					SyntaxKind.SimpleMemberAccessExpression,
 					navChain,
 					SyntaxFactory.IdentifierName("Mock"));
-				MemberAccessExpressionSyntax methodAccess = SyntaxFactory.MemberAccessExpression(
+				MemberAccessExpressionSyntax setupAccess = SyntaxFactory.MemberAccessExpression(
 					SyntaxKind.SimpleMemberAccessExpression,
 					mockAccess,
+					SyntaxFactory.IdentifierName("Setup"));
+				MemberAccessExpressionSyntax methodAccess = SyntaxFactory.MemberAccessExpression(
+					SyntaxKind.SimpleMemberAccessExpression,
+					setupAccess,
 					methodNameSyntax);
 				replacement = SyntaxFactory.InvocationExpression(methodAccess, transformedArgs)
 					.WithTriviaFrom(invocation)
