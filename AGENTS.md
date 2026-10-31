@@ -1,6 +1,6 @@
 # Mockolate.Migration Agent Guide
 
-Mockolate.Migration ships Roslyn analyzers and code fixers that rewrite Moq and NSubstitute usage to [Mockolate](https://github.com/aweXpect/Mockolate). It is published as the `Mockolate.Migration` NuGet package.
+Mockolate.Migration ships Roslyn analyzers and code fixers that rewrite Moq and NSubstitute usage to [Mockolate](https://github.com/Testably/Mockolate). It is published as the `Mockolate.Migration` NuGet package.
 
 ## Design Goals
 
