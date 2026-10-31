@@ -21,7 +21,7 @@ Correctness is a must. The other goals are strong defaults and win in this order
 - Run the tests that cover your change, then the whole `Mockolate.Migration.Tests` project before pushing. CI also runs both Playground projects and `Mockolate.Migration.Example.Tests`.
 - All tests run on TUnit and the Microsoft.Testing.Platform, which `global.json` selects for `dotnet test`: build the solution, then pass the project with `--project` and `--no-build`, and filter with `--treenode-filter` ([Workflows](Docs/agents/workflows.md)).
 - The Moq and NSubstitute versions in ``Verifiers/CSharpCodeFixVerifier`2.cs`` and ``CSharpAnalyzerVerifier`1.cs`` are hard-coded; keep them in sync with `Directory.Packages.props`.
-- A new or changed migration updates the tables in `README.md`. The README is also the page on the docs site.
+- A new or changed migration updates the tables in `README.md` and on the docs site page `Docs/pages/11-migration.md`.
 - Keep each file's line endings and BOM as they are. Files are LF in git and CRLF in a Windows checkout; a bare LF inside a CRLF file changes the content of raw string literals. PowerShell rewrites can add or strip a UTF-8 BOM, so check `git diff` for U+FEFF.
 - No em-dashes in new docs, XML docs or commit messages.
 

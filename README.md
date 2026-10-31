@@ -7,7 +7,7 @@
 
 A Roslyn analyzer and code-fix provider that migrates [Moq](https://github.com/devlooped/moq) and
 [NSubstitute](https://nsubstitute.github.io) usage to
-[Mockolate](https://github.com/aweXpect/Mockolate). Drop the package into a project that uses one of
+[Mockolate](https://github.com/Testably/Mockolate). Drop the package into a project that uses one of
 those libraries and the analyzer flags each mock it can migrate; the accompanying code fix rewrites
 the setup, verification, and event APIs to their Mockolate equivalents.
 
@@ -19,7 +19,7 @@ Install the NuGet package into the project you want to migrate:
 dotnet add package Mockolate.Migration
 ```
 
-The package only needs to be referenced while you are migrating — it ships the analyzer and code fixer,
+The package only needs to be referenced while you are migrating: it ships the analyzer and code fixer,
 not runtime code. Once the source library is gone from a project you can remove the reference again.
 
 ## How it works
@@ -33,8 +33,8 @@ code fix from your IDE (Visual Studio, Rider, VS Code with C# Dev Kit) or via
 | `MockolateM001` | Moq            | *Migrate Moq to Mockolate*         |
 | `MockolateM002` | NSubstitute    | *Migrate NSubstitute to Mockolate* |
 
-The fixer rewrites the whole mock — the construction call, all setup calls on that mock, the
-corresponding verification calls, event wiring, and trailing `.Object` accesses (Moq) — in a single
+The fixer rewrites the whole mock (the construction call, all setup calls on that mock, the
+corresponding verification calls, event wiring, and trailing `.Object` accesses for Moq) in a single
 step.
 
 ## Migrating from Moq
@@ -47,29 +47,29 @@ and event raising / verification are routed through `Mock.Raise` and event-speci
 
 ```csharp
 // Before (Moq)
-var mock = new Mock<IFoo>();
+Mock<IFoo> mock = new Mock<IFoo>();
 mock.Setup(m => m.Compute(It.IsAny<int>())).Returns(42);
-var sut = new Service(mock.Object);
+Service sut = new Service(mock.Object);
 sut.Run();
 mock.Verify(m => m.Compute(It.IsAny<int>()), Times.Once());
 
 // After (Mockolate)
-var mock = IFoo.CreateMock();
+IFoo mock = IFoo.CreateMock();
 mock.Mock.Setup.Compute(It.IsAny<int>()).Returns(42);
-var sut = new Service(mock);
+Service sut = new Service(mock);
 sut.Run();
 mock.Mock.Verify.Compute(It.IsAny<int>()).Once();
 ```
 
 ```csharp
-// Before (Moq) — properties and events
-var mock = new Mock<IFoo>(MockBehavior.Strict);
+// Before (Moq): properties and events
+Mock<IFoo> mock = new Mock<IFoo>(MockBehavior.Strict);
 mock.SetupProperty(m => m.Name, "initial");
 mock.Raise(m => m.Changed += null, EventArgs.Empty);
 mock.VerifyAdd(m => m.Changed += It.IsAny<EventHandler>(), Times.Once());
 
 // After (Mockolate)
-var mock = IFoo.CreateMock(MockBehavior.Default.ThrowingWhenNotSetup());
+IFoo mock = IFoo.CreateMock(MockBehavior.Default.ThrowingWhenNotSetup());
 mock.Mock.Setup.Name.InitializeWith("initial");
 mock.Mock.Raise.Changed(null, EventArgs.Empty);
 mock.Mock.Verify.Changed.Subscribed().Once();
@@ -81,27 +81,27 @@ mock.Mock.Verify.Changed.Subscribed().Once();
 |----------------------------------------------------------|-----------------------------------------------------------------------------|
 | `new Mock<IFoo>()`                                       | `IFoo.CreateMock()`                                                         |
 | `new Mock<IFoo>(MockBehavior.Strict)`                    | `IFoo.CreateMock(MockBehavior.Default.ThrowingWhenNotSetup())`              |
-| `sut.Object`                                             | `sut` (the `.Object` access is dropped)                                     |
-| `sut.Setup(m => m.Method(args))`                         | `sut.Mock.Setup.Method(args)`                                               |
-| `sut.Setup(m => m.Prop)` / `sut.SetupGet(...)`           | `sut.Mock.Setup.Prop`                                                       |
-| `sut.SetupProperty(m => m.Prop)`                         | `sut.Mock.Setup.Prop.Register()`                                            |
-| `sut.SetupProperty(m => m.Prop, value)`                  | `sut.Mock.Setup.Prop.InitializeWith(value)`                                 |
-| `sut.SetupSequence(...).Returns(a).Returns(b)`           | `sut.Mock.Setup.Method(...).Returns(a).Returns(b)`                          |
+| `mock.Object`                                            | `mock` (the `.Object` access is dropped)                                    |
+| `mock.Setup(m => m.Method(args))`                        | `mock.Mock.Setup.Method(args)`                                              |
+| `mock.Setup(m => m.Prop)` / `mock.SetupGet(...)`         | `mock.Mock.Setup.Prop`                                                      |
+| `mock.SetupProperty(m => m.Prop)`                        | `mock.Mock.Setup.Prop.Register()`                                           |
+| `mock.SetupProperty(m => m.Prop, value)`                 | `mock.Mock.Setup.Prop.InitializeWith(value)`                                |
+| `mock.SetupSequence(...).Returns(a).Returns(b)`          | `mock.Mock.Setup.Method(...).Returns(a).Returns(b)`                         |
 | `.Returns(...)` / `.ReturnsAsync(...)` / `.Throws(...)`  | preserved on the Mockolate setup chain                                      |
 | `.Callback(...)`                                         | `.Do(...)` on the Mockolate setup                                           |
-| `sut.InSequence(seq).Setup(...)` (and other setup forms) | `.InSequence(...)` wrapper is stripped; use `Verify…Then(...)` for ordering |
-| `sut.Verify(m => m.Method(args), Times.Once())`          | `sut.Mock.Verify.Method(args).Once()`                                       |
-| `sut.VerifyGet` / `sut.VerifySet`                        | `sut.Mock.Verify.Prop.Got(...)` / `.Set(...)`                               |
-| `sut.Raise(m => m.Event += null, args)`                  | `sut.Mock.Raise.Event(sender, args)`                                        |
-| `sut.VerifyAdd(m => m.Event += ..., times)`              | `sut.Mock.Verify.Event.Subscribed().<times>()`                              |
-| `sut.VerifyRemove(m => m.Event -= ..., times)`           | `sut.Mock.Verify.Event.Unsubscribed().<times>()`                            |
+| `mock.InSequence(seq).Setup(...)` (and other setups)     | `.InSequence(...)` wrapper is stripped; use `Verify…Then(...)` for ordering |
+| `mock.Verify(m => m.Method(args), Times.Once())`         | `mock.Mock.Verify.Method(args).Once()`                                      |
+| `mock.VerifyGet` / `mock.VerifySet`                      | `mock.Mock.Verify.Prop.Got(...)` / `.Set(...)`                              |
+| `mock.Raise(m => m.Event += null, args)`                 | `mock.Mock.Raise.Event(sender, args)`                                       |
+| `mock.VerifyAdd(m => m.Event += ..., times)`             | `mock.Mock.Verify.Event.Subscribed().<times>()`                             |
+| `mock.VerifyRemove(m => m.Event -= ..., times)`          | `mock.Mock.Verify.Event.Unsubscribed().<times>()`                           |
 | Non-literal `Times` argument (e.g. a variable)           | Original Moq call kept, with a `// TODO` comment                            |
 | `It.IsAny<T>()`                                          | preserved as `It.IsAny<T>()`                                                |
 | `It.Is<T>(predicate)`                                    | `It.Satisfies<T>(predicate)`                                                |
 | `It.IsInRange(lo, hi, Range.Inclusive)`                  | `It.IsInRange(lo, hi)` (the `Range` argument is dropped)                    |
 | `It.IsRegex(pattern, options)`                           | `It.Matches(pattern).AsRegex(options)`                                      |
 | `It.Ref<T>.IsAny` / `out` parameters                     | `It.IsAnyRef<T>()` / `It.IsOut(() => value)`                                |
-| Nested mocks (`sut.Setup(m => m.Child.Prop)`)            | Navigation chain is preserved: `sut.Child.Mock.Setup.Prop`                  |
+| Nested mocks (`mock.Setup(m => m.Child.Prop)`)           | Navigation chain is preserved: `mock.Child.Mock.Setup.Prop`                 |
 
 ## Migrating from NSubstitute
 
@@ -114,29 +114,29 @@ are migrated with a `// TODO` comment because the parent must be wired up to ret
 
 ```csharp
 // Before (NSubstitute)
-var sub = Substitute.For<IFoo>();
+IFoo sub = Substitute.For<IFoo>();
 sub.Compute(Arg.Any<int>()).Returns(42);
-var sut = new Service(sub);
+Service sut = new Service(sub);
 sut.Run();
 sub.Received(1).Compute(Arg.Any<int>());
 
 // After (Mockolate)
-var sub = IFoo.CreateMock();
+IFoo sub = IFoo.CreateMock();
 sub.Mock.Setup.Compute(It.IsAny<int>()).Returns(42);
-var sut = new Service(sub);
+Service sut = new Service(sub);
 sut.Run();
 sub.Mock.Verify.Compute(It.IsAny<int>()).Once();
 ```
 
 ```csharp
-// Before (NSubstitute) — sequential returns, When/Do, events
-var sub = Substitute.For<IFoo>();
+// Before (NSubstitute): sequential returns, When/Do, events
+IFoo sub = Substitute.For<IFoo>();
 sub.Compute(0).Returns(1, 2, 3);
 sub.When(x => x.Reset()).Do(_ => counter++);
 sub.Changed += Raise.EventWith(EventArgs.Empty);
 
 // After (Mockolate)
-var sub = IFoo.CreateMock();
+IFoo sub = IFoo.CreateMock();
 sub.Mock.Setup.Compute(0).Returns(1).Returns(2).Returns(3).Forever();
 sub.Mock.Setup.Reset().Do(() => counter++);
 sub.Mock.Raise.Changed(null, EventArgs.Empty);
@@ -148,13 +148,13 @@ NSubstitute's `Returns(call => …)`, `When(...).Do(call => …)`, and `AndDoes(
 receive a `CallInfo` parameter that exposes the invocation arguments. Mockolate's equivalent
 overloads instead take the method's parameters directly, so the migration rewrites the lambda:
 
-- **Body never reads the parameter** — drop it: `Do(call => x++)` → `Do(() => x++)`.
+- **Body never reads the parameter**: drop it, `Do(call => x++)` → `Do(() => x++)`.
 - **Body uses statically resolvable accesses** (`call.ArgAt<T>(literalIndex)`,
-  `call[literalIndex]`, or type-unique `call.Arg<T>()`) — rewrite the lambda's parameter list to
+  `call[literalIndex]`, or type-unique `call.Arg<T>()`): rewrite the lambda's parameter list to
   match the receiver method and replace each access with the matching parameter name:
   `Returns(call => call.ArgAt<int>(0) + 1)` → `Returns((int x) => x + 1)`.
-- **Anything else** — bare `call`, dynamic indices, indexer-write for out/ref, ambiguous
-  `call.Arg<T>()`, or local variables that would shadow the injected parameter names — preserve
+- **Anything else** (bare `call`, dynamic indices, indexer-write for out/ref, ambiguous
+  `call.Arg<T>()`, or local variables that would shadow the injected parameter names): preserve
   the original lambda and emit a `// TODO` comment so the rewrite can be done by hand.
 
 ### Supported NSubstitute migrations
