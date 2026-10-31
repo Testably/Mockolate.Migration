@@ -41,6 +41,40 @@ public partial class MoqCodeFixProviderTests
 				""");
 
 		[Test]
+		public async Task VerifyGet_WithFailMessage_MigratesToGotAtLeastOnce()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using Moq;
+
+				public interface IFoo { string Name { get; set; } }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = [|new Mock<IFoo>()|];
+						mock.VerifyGet(m => m.Name, "Name was not read");
+					}
+				}
+				""",
+				"""
+				using Moq;
+				using Mockolate;
+				using Mockolate.Verify;
+
+				public interface IFoo { string Name { get; set; } }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = IFoo.CreateMock();
+						mock.Mock.Verify.Name.Got().AtLeastOnce();
+					}
+				}
+				""");
+
+		[Test]
 		public async Task VerifyGet_WithoutTimes_MigratesToGotAtLeastOnce()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -109,6 +143,40 @@ public partial class MoqCodeFixProviderTests
 				""");
 
 		[Test]
+		public async Task VerifyGet_WithUntranslatableTimes_PreservesOriginalCallWithTodo()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using Moq;
+
+				public interface IFoo { string Name { get; set; } }
+
+				public class Tests
+				{
+					public void Test(Times timesVar)
+					{
+						var mock = [|new Mock<IFoo>()|];
+						mock.VerifyGet(m => m.Name, timesVar);
+					}
+				}
+				""",
+				"""
+				using Moq;
+				using Mockolate;
+
+				public interface IFoo { string Name { get; set; } }
+
+				public class Tests
+				{
+					public void Test(Times timesVar)
+					{
+						var mock = IFoo.CreateMock();
+						// TODO(MockolateM001): translate the Times argument 'timesVar' manually
+						mock.VerifyGet(m => m.Name, timesVar);
+					}
+				}
+				""");
+
+		[Test]
 		public async Task VerifySet_WithLiteral_PassesValueDirectly()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -172,6 +240,40 @@ public partial class MoqCodeFixProviderTests
 					{
 						var mock = IFoo.CreateMock();
 						mock.Mock.Verify.Name.Set("foo").Never();
+					}
+				}
+				""");
+
+		[Test]
+		public async Task VerifySet_WithUntranslatableTimes_PreservesOriginalCallWithTodo()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using Moq;
+
+				public interface IFoo { string Name { get; set; } }
+
+				public class Tests
+				{
+					public void Test(Times timesVar)
+					{
+						var mock = [|new Mock<IFoo>()|];
+						mock.VerifySet(m => m.Name = "foo", timesVar);
+					}
+				}
+				""",
+				"""
+				using Moq;
+				using Mockolate;
+
+				public interface IFoo { string Name { get; set; } }
+
+				public class Tests
+				{
+					public void Test(Times timesVar)
+					{
+						var mock = IFoo.CreateMock();
+						// TODO(MockolateM001): translate the Times argument 'timesVar' manually
+						mock.VerifySet(m => m.Name = "foo", timesVar);
 					}
 				}
 				""");

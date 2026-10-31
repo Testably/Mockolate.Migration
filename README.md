@@ -95,6 +95,7 @@ mock.Mock.Verify.Changed.Subscribed().Once();
 | `sut.Raise(m => m.Event += null, args)`                  | `sut.Mock.Raise.Event(sender, args)`                                        |
 | `sut.VerifyAdd(m => m.Event += ..., times)`              | `sut.Mock.Verify.Event.Subscribed().<times>()`                              |
 | `sut.VerifyRemove(m => m.Event -= ..., times)`           | `sut.Mock.Verify.Event.Unsubscribed().<times>()`                            |
+| Non-literal `Times` argument (e.g. a variable)           | Original Moq call kept, with a `// TODO` comment                            |
 | `It.IsAny<T>()`                                          | preserved as `It.IsAny<T>()`                                                |
 | `It.Is<T>(predicate)`                                    | `It.Satisfies<T>(predicate)`                                                |
 | `It.IsInRange(lo, hi, Range.Inclusive)`                  | `It.IsInRange(lo, hi)` (the `Range` argument is dropped)                    |
