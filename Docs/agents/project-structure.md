@@ -30,7 +30,7 @@ Most changes extend an existing fixer; a new diagnostic is only needed for a new
 2. Implement the rewrite in `MoqCodeFixProvider.cs` or `NSubstituteCodeFixProvider.cs`: add a `FindAndBuild...Replacements` method or extend an existing one, and wire it into `ConvertAssertionAsync`.
 3. If the analyzer has to flag something new, change the analyzer and add tests to `MoqAnalyzerTests.cs` or `NSubstituteAnalyzerTests.cs` using `Verifier.VerifyAnalyzerAsync`.
 4. Cover the pattern in the matching Playground project. If the construct was listed in `UnsupportedFeatureTests.cs`, move it to the fitting test class there.
-5. Update the "Supported ... migrations" table and, where useful, the examples in `README.md`.
+5. Update the "Supported ... migrations" table and, where useful, the examples in `README.md`, and the supported-constructs table on the docs page (`Docs/pages/01-automated/01-moq.md` or `02-nsubstitute.md`).
 
 For a new source library:
 

@@ -19,7 +19,7 @@ When goals conflict, the earlier one wins.
 5. **Fast, especially on the happy path.** Succeeding calls are the common case. Avoid allocations in hot paths, and back every performance claim or change with a benchmark before and after.
 6. **Extensible.** Third parties build on the same extension points the library uses itself. New features use the public extension surface instead of internals, and the core stays small and stable.
 7. **Errors at compile time rather than at run time.** Prefer analyzers, source generators and types that make misuse a compiler error over runtime checks.
-8. **Documented and pleasant to read.** A public feature is not done until it is documented on the docs site, with examples that are tested where the repository can test them. The docs are rendered with Docusaurus: use its features where they help the reader, such as admonitions (`:::note`, `:::tip`, `:::warning`) for remarks, tabs for alternatives (for example synchronous and asynchronous usage, or one tab per test framework) and collapsible `<details>` for long output, and follow the style of the existing pages.
+8. **Documented and pleasant to read.** A public feature is not done until it is documented on the docs site, with examples that are tested where the repository can test them. The docs are rendered with Docusaurus: use its features where they help the reader, such as admonitions for remarks (with the meanings in the [docs style guide](https://github.com/Testably/Testably.Site/blob/main/Docs/style-guide.md#callouts)), tabs for alternatives (for example synchronous and asynchronous usage, or one tab per test framework) and collapsible `<details>` for long output, and follow the docs style guide.
 
 ## Code
 
