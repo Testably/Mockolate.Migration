@@ -21,9 +21,21 @@ Correctness is a must. The other goals are strong defaults and win in this order
 - Run the tests that cover your change, then the whole `Mockolate.Migration.Tests` project before pushing. CI also runs both Playground projects and `Mockolate.Migration.Example.Tests`.
 - All tests run on TUnit and the Microsoft.Testing.Platform, which `global.json` selects for `dotnet test`: build the solution, then pass the project with `--project` and `--no-build`, and filter with `--treenode-filter` ([Workflows](Docs/agents/workflows.md)).
 - The Moq and NSubstitute versions in ``Verifiers/CSharpCodeFixVerifier`2.cs`` and ``CSharpAnalyzerVerifier`1.cs`` are hard-coded; keep them in sync with `Directory.Packages.props`.
-- A new or changed migration updates the tables in `README.md` and on the docs site page `Docs/pages/11-migration.md`.
+- A new or changed migration updates the tables in `README.md` and on the docs site pages `Docs/pages/01-automated/01-moq.md` and `02-nsubstitute.md`.
 - Keep each file's line endings and BOM as they are. Files are LF in git and CRLF in a Windows checkout; a bare LF inside a CRLF file changes the content of raw string literals. PowerShell rewrites can add or strip a UTF-8 BOM, so check `git diff` for U+FEFF.
-- No em-dashes in new docs, XML docs or commit messages.
+- No em dashes in docs, XML docs or commit messages.
+
+## Documentation
+
+Pages under `Docs/pages` are published on docs.testably.org and follow the [docs style guide](https://github.com/Testably/Testably.Site/blob/main/Docs/style-guide.md). The key rules:
+
+- US English, sentence case for headings and labels, no em dashes, one line per paragraph.
+- A `description` in the front matter of every page; the H1 is the title; order with unique `NN-` prefixes.
+- Relative file links within the repository, site-absolute `/Library/...` links across libraries.
+- Install instructions only through `<PackageInstall package="..." />`, never hand-written commands or NuGet badges.
+- Examples check results with `await That(...)`; complete examples use TUnit `[Test]`.
+
+The pages are copied into the migration section of the Mockolate docs; see [Workflows](Docs/agents/workflows.md#documentation) for what this means for links.
 
 ## Git Workflow
 

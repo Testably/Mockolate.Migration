@@ -11,6 +11,8 @@ A Roslyn analyzer and code-fix provider that migrates [Moq](https://github.com/d
 those libraries and the analyzer flags each mock it can migrate; the accompanying code fix rewrites
 the setup, verification, and event APIs to their Mockolate equivalents.
 
+The documentation is at **[docs.testably.org/Mockolate/migration/automated](https://docs.testably.org/Mockolate/migration/automated/)**.
+
 ## Installation
 
 Install the NuGet package into the project you want to migrate:
