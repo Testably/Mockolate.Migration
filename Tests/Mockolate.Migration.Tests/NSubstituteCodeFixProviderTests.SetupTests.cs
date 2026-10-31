@@ -501,7 +501,7 @@ public partial class NSubstituteCodeFixProviderTests
 					public void Test()
 					{
 						var sub = IFoo.CreateMock();
-						sub.Mock.Setup.Bar(default).AnyParameters().Returns(1).Returns(2).Returns(3);
+						sub.Mock.Setup.Bar(default).AnyParameters().Returns(1).Returns(2).Returns(3).Forever();
 					}
 				}
 				""");
@@ -569,7 +569,7 @@ public partial class NSubstituteCodeFixProviderTests
 					public void Test()
 					{
 						var sub = IFoo.CreateMock();
-						sub.Mock.Setup.Name.Returns("a").Returns("b").Returns("c");
+						sub.Mock.Setup.Name.Returns("a").Returns("b").Returns("c").Forever();
 					}
 				}
 				""");
@@ -602,7 +602,7 @@ public partial class NSubstituteCodeFixProviderTests
 					public void Test()
 					{
 						var sub = IFoo.CreateMock();
-						sub.Mock.Setup.Bar(1).Returns(1).Returns(2).Returns(3);
+						sub.Mock.Setup.Bar(1).Returns(1).Returns(2).Returns(3).Forever();
 					}
 				}
 				""");

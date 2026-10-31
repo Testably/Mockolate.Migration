@@ -303,6 +303,7 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 
 				bool isNested = targetMemberAccess.Expression is MemberAccessExpressionSyntax;
 				BuildSequentialOuterIfNeeded(effectiveOuter, configuratorMethod, setupInvocation,
+					outerInvocation.Parent is ExpressionStatementSyntax,
 					out InvocationExpressionSyntax? sequentialReplacement);
 				InvocationExpressionSyntax? outerReplacement = sequentialReplacement
 				                                               ?? (isNested
@@ -349,6 +350,7 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 
 				bool isNestedProperty = targetPropertyAccess.Expression is MemberAccessExpressionSyntax;
 				BuildSequentialOuterIfNeeded(effectivePropertyOuter, configuratorMethod, setupAccess,
+					outerInvocation.Parent is ExpressionStatementSyntax,
 					out InvocationExpressionSyntax? sequentialPropertyReplacement);
 				InvocationExpressionSyntax? outerPropertyReplacement = sequentialPropertyReplacement
 				                                                       ?? (isNestedProperty
@@ -493,7 +495,11 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 	/// <summary>
 	///     Builds an outer-level replacement for the configurator chain. Two cases trigger this:
 	///     <list type="bullet">
-	///         <item>Multi-arg <c>Returns</c>/<c>Throws</c> — split into a chain of single-arg calls.</item>
+	///         <item>
+	///             Multi-arg <c>Returns</c>/<c>Throws</c> — split into a chain of single-arg calls. A <c>Returns</c>
+	///             chain repeats its last entry like NSubstitute does (<c>.Forever()</c>, or <c>.For(int.MaxValue)</c>
+	///             when the chain continues).
+	///         </item>
 	///         <item>
 	///             <c>ReturnsForAnyArgs</c>/<c>ThrowsForAnyArgs</c> — append <c>.AnyParameters()</c> to the setup
 	///             receiver and rename the configurator to its non-<c>ForAnyArgs</c> form (also splitting when
@@ -504,7 +510,7 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 	///     <c>Returns</c>/<c>Throws</c>/etc. shape can be preserved by the inner-only rewrite.
 	/// </summary>
 	private static void BuildSequentialOuterIfNeeded(InvocationExpressionSyntax outerInvocation,
-		string configuratorMethod, ExpressionSyntax setupReceiver,
+		string configuratorMethod, ExpressionSyntax setupReceiver, bool isStatement,
 		out InvocationExpressionSyntax? replacement)
 	{
 		replacement = null;
@@ -571,6 +577,24 @@ public class NSubstituteCodeFixProvider() : AssertionCodeFixProvider(Rules.NSubs
 						current,
 						RenameConfiguratorIdentifier(outerInvocation, targetMethod)),
 					SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList(arg)));
+			}
+
+			if (targetMethod == "Returns" && outerArgs.Count > 1)
+			{
+				current = isStatement
+					? SyntaxFactory.InvocationExpression(
+						SyntaxFactory.MemberAccessExpression(
+							SyntaxKind.SimpleMemberAccessExpression,
+							current,
+							SyntaxFactory.IdentifierName("Forever")),
+						SyntaxFactory.ArgumentList())
+					: SyntaxFactory.InvocationExpression(
+						SyntaxFactory.MemberAccessExpression(
+							SyntaxKind.SimpleMemberAccessExpression,
+							current,
+							SyntaxFactory.IdentifierName("For")),
+						SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList(
+							SyntaxFactory.Argument(SyntaxFactory.ParseExpression("int.MaxValue")))));
 			}
 		}
 
