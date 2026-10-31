@@ -105,6 +105,7 @@ dispenser.Mock.Verify.ChocolateDispensed.Subscribed().Once();
 | `mock.Raise(m => m.Event += null, args)`                  | `mock.Mock.Raise.Event(sender, args)`                                  |
 | `mock.VerifyAdd(m => m.Event += …, times)`                | `mock.Mock.Verify.Event.Subscribed()` with the count                   |
 | `mock.VerifyRemove(m => m.Event -= …, times)`             | `mock.Mock.Verify.Event.Unsubscribed()` with the count                 |
+| A non-literal `Times` argument (e.g. a variable)          | the Moq call is kept, with a `// TODO` comment                         |
 | `It.IsAny<T>()`                                           | `It.IsAny<T>()`                                                        |
 | `It.Is<T>(predicate)`                                     | `It.Satisfies<T>(predicate)`                                           |
 | `It.IsInRange(a, b, Range.Inclusive)`                     | `It.IsInRange(a, b)`                                                   |
