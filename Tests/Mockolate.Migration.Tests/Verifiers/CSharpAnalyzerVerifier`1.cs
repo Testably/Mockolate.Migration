@@ -38,7 +38,7 @@ public static partial class CSharpAnalyzerVerifier<TAnalyzer>
 			{
 				AdditionalReferences =
 				{
-					typeof(MockRegistry).Assembly.Location,
+					typeof(MockBehavior).Assembly.Location,
 				},
 			},
 		};
