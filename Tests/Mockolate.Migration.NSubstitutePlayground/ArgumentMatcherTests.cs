@@ -20,7 +20,9 @@ public class ArgumentMatcherTests
 	public async Task ArgCompat_AnyAndIs_WorkLikePlainArg()
 	{
 		IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
+#pragma warning disable CS0618 // Arg.Compat is obsolete, but the migration still supports it
 		dispenser.Dispense(Arg.Compat.Any<string>(), Arg.Compat.Is<int>(i => i > 0)).Returns(true);
+#pragma warning restore CS0618
 
 		await That(dispenser.Dispense("Dark", 5)).IsTrue();
 		await That(dispenser.Dispense("Dark", 0)).IsFalse();
