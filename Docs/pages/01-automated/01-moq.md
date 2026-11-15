@@ -197,7 +197,7 @@ dispenser.Mock.Verify.ChocolateDispensed.Unsubscribed().Never();
 | Moq                                                       | Mockolate                                                              |
 |-----------------------------------------------------------|------------------------------------------------------------------------|
 | `new Mock<T>()`                                           | `T.CreateMock()`                                                       |
-| `new Mock<T>(MockBehavior.Strict)`                        | `T.CreateMock(MockBehavior.Default.ThrowingWhenNotSetup())`            |
+| `new Mock<T>(MockBehavior.Strict)`                        | `T.CreateMock(Mockolate.MockBehavior.Default.ThrowingWhenNotSetup())`  |
 | `mock.Object`                                             | `mock` (the `.Object` access is dropped)                               |
 | `mock.Setup(m => m.Method(args))`                         | `mock.Mock.Setup.Method(args)`                                         |
 | `mock.Setup(m => m.Prop)`, `mock.SetupGet(m => m.Prop)`   | `mock.Mock.Setup.Prop`                                                 |
@@ -209,16 +209,18 @@ dispenser.Mock.Verify.ChocolateDispensed.Unsubscribed().Never();
 | `.Callback(…)`                                            | `.Do(…)`                                                               |
 | `mock.InSequence(sequence).Setup(…)`                      | `mock.Mock.Setup.Method(…)` (the `InSequence` wrapper is removed)      |
 | `mock.Verify(m => m.Method(args), Times.Once())`          | `mock.Mock.Verify.Method(args).Once()`                                 |
-| `mock.VerifyGet(…)`, `mock.VerifySet(…)`                  | `mock.Mock.Verify.Prop.Got(…)`, `mock.Mock.Verify.Prop.Set(…)`         |
-| `mock.Raise(m => m.Event += null, args)`                  | `mock.Mock.Raise.Event(sender, args)`                                  |
+| `mock.VerifyGet(m => m.Prop, times)`                      | `mock.Mock.Verify.Prop.Got()` with the count                           |
+| `mock.VerifySet(m => m.Prop = value, times)`              | `mock.Mock.Verify.Prop.Set(value)` with the count                      |
+| `mock.Raise(m => m.Event += null, eventArgs)`             | `mock.Mock.Raise.Event(null, eventArgs)`                               |
+| `mock.Raise(m => m.Event += null, args)` (custom delegate) | `mock.Mock.Raise.Event(args)`                                         |
 | `mock.VerifyAdd(m => m.Event += …, times)`                | `mock.Mock.Verify.Event.Subscribed()` with the count                   |
 | `mock.VerifyRemove(m => m.Event -= …, times)`             | `mock.Mock.Verify.Event.Unsubscribed()` with the count                 |
 | A non-literal `Times` argument (e.g. a variable)          | the Moq call is kept, with a `// TODO` comment                         |
 | `It.IsAny<T>()`                                           | `It.IsAny<T>()`                                                        |
 | `It.Is<T>(predicate)`                                     | `It.Satisfies<T>(predicate)`                                           |
 | `It.IsInRange(a, b, Range.Inclusive)`                     | `It.IsInRange(a, b)`                                                   |
-| `It.IsRegex(pattern, options)`                            | `It.Matches(pattern).AsRegex(options)`                                 |
+| `It.IsRegex(pattern)`                                     | `It.Matches(pattern).AsRegex()`                                        |
 | `It.Ref<T>.IsAny`, `out` parameters                       | `It.IsAnyRef<T>()`, `It.IsOut(() => value)`                            |
 | `mock.Setup(m => m.Child.Prop)`                           | `mock.Child.Mock.Setup.Prop` and a `// TODO` comment                   |
 
-See [parameter matching](../../06-parameter-matching.md) for the Mockolate matchers, and [what needs manual review](/Mockolate/migration/automated/#what-needs-manual-review) for the cases the code fix cannot finish on its own.
+See [parameter matching](../../06-parameter-matching.md) for the Mockolate matchers, and [what needs manual review](./00-index.md#what-needs-manual-review) for the cases the code fix cannot finish on its own.

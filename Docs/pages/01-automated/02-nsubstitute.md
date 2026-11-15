@@ -118,7 +118,7 @@ In NSubstitute, the callbacks of `Returns(call => …)`, `When(…).Do(call => �
 
 - If the lambda does not use `call`, the parameter is dropped: `Do(call => count++)` becomes `Do(() => count++)`.
 - If the lambda only reads arguments at a constant position (`call.ArgAt<T>(0)`, `call[0]`) or by a unique type (`call.Arg<T>()`), it gets the parameters of the method, and each access is replaced with the parameter: `Returns(call => call.ArgAt<int>(1) > 0)` becomes `Returns((string type, int amount) => amount > 0)`.
-- Otherwise the lambda is kept as it is and marked with a `// TODO` comment. See [what needs manual review](/Mockolate/migration/automated/#what-needs-manual-review).
+- Otherwise the lambda is kept as it is and marked with a `// TODO` comment. See [what needs manual review](./00-index.md#what-needs-manual-review).
 
 Both rewrites in one example:
 
@@ -196,4 +196,4 @@ dispenser.Mock.Raise.ChocolateDispensed("Dark", 2);
 | `Arg.Compat.Any<T>()` and the other `Arg.Compat` matchers   | the same as the matching `Arg` matcher                                       |
 | `sub.Child.Method(args).Returns(value)`                     | `sub.Child.Mock.Setup.Method(args).Returns(value)` and a `// TODO` comment   |
 
-See [parameter matching](../../06-parameter-matching.md) for the Mockolate matchers, and [what needs manual review](/Mockolate/migration/automated/#what-needs-manual-review) for the cases the code fix cannot finish on its own.
+See [parameter matching](../../06-parameter-matching.md) for the Mockolate matchers, and [what needs manual review](./00-index.md#what-needs-manual-review) for the cases the code fix cannot finish on its own.
