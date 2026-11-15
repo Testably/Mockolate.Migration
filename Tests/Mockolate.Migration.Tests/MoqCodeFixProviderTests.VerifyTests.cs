@@ -40,7 +40,7 @@ public partial class MoqCodeFixProviderTests
 					public void Test()
 					{
 						var mock = IFoo.CreateMock();
-						mock.Mock.Verify.Bar({|CS0104:It|}.Matches("^A").AsRegex(), {|CS0104:It|}.Satisfies<int>(n => n > 0)).Once();
+						mock.Mock.Verify.Bar({|CS0104:It|}.Matches("^A").AsRegex().CaseSensitive(), {|CS0104:It|}.Satisfies<int>(n => n > 0)).Once();
 					}
 				}
 				""");

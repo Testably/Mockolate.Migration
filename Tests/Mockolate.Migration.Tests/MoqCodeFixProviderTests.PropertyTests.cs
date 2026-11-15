@@ -457,7 +457,7 @@ public partial class MoqCodeFixProviderTests
 					public void Test()
 					{
 						var mock = IFoo.CreateMock();
-						mock.Mock.Verify.Name.Set({|CS0104:It|}.Matches("^foo$").AsRegex()).Once();
+						mock.Mock.Verify.Name.Set({|CS0104:It|}.Matches("^foo$").AsRegex().CaseSensitive()).Once();
 					}
 				}
 				""");
