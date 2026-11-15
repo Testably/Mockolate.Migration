@@ -11,26 +11,33 @@ The documentation is at **[docs.testably.org/Mockolate/migration/automated](http
 
 ## Installation
 
-Install the NuGet package into the project you want to migrate:
+The migration package does not reference Mockolate, so install Mockolate into the project you want to migrate as well, then the migration package:
 
 ```shell
+dotnet add package Mockolate
 dotnet add package Mockolate.Migration
 ```
 
-The package only needs to be referenced while you are migrating: it ships the analyzer and the code fix, not runtime code. Once the source library is gone from a project you can remove the reference again.
+The migration package only needs to be referenced while you are migrating: it ships the analyzer and the code fix, not runtime code.
 
 ## How it works
 
-After installing the package, every supported construct is reported as a warning. Apply the relevant
-code fix from your IDE (Visual Studio, Rider, VS Code with C# Dev Kit) or via
-`dotnet format analyzers` to rewrite the call site.
+After installing the package, every mock the code fix can migrate is reported as a warning. The code fix rewrites the whole mock (the construction call, all setup calls on that mock, the corresponding verification calls, event wiring, and trailing `.Object` accesses for Moq) in a single step and adds `using Mockolate;`.
 
 | Diagnostic      | Source library | Code fix title                     |
 |-----------------|----------------|------------------------------------|
 | `MockolateM001` | Moq            | *Migrate Moq to Mockolate*         |
 | `MockolateM002` | NSubstitute    | *Migrate NSubstitute to Mockolate* |
 
-The code fix rewrites the whole mock (the construction call, all setup calls on that mock, the corresponding verification calls, event wiring, and trailing `.Object` accesses for Moq) in a single step.
+## Workflow
+
+1. Install Mockolate and the migration package.
+2. Apply the code fix in your IDE (Visual Studio, Rider, VS Code with C# Dev Kit), with *Fix all occurrences* for many mocks at once, or from the command line with `dotnet format analyzers --diagnostics MockolateM001 MockolateM002`.
+3. Remove `using Moq;` or `using NSubstitute;` from the migrated files once nothing else in them uses the source library. The code fix keeps the directive, and with Moq, `It` is ambiguous until you remove it.
+4. Build, run your tests and check [what needs manual review](https://docs.testably.org/Mockolate/migration/automated/#what-needs-manual-review): the code fix leaves a `// TODO(MockolateM001)` or `// TODO(MockolateM002)` comment where it cannot finish the migration on its own. The pages for [Moq](https://docs.testably.org/Mockolate/migration/automated/moq#behavioral-differences) and [NSubstitute](https://docs.testably.org/Mockolate/migration/automated/nsubstitute#behavioral-differences) also list where the migrated code behaves differently.
+5. Remove Moq or NSubstitute and the migration package. Mockolate stays in the project.
+
+To keep a mock as it is, suppress the warning with `#pragma warning disable MockolateM001` (or `MockolateM002`) or with `dotnet_diagnostic.MockolateM001.severity = none` in `.editorconfig`.
 
 ## Migrating from Moq
 
