@@ -135,6 +135,19 @@ public class SetupTests
 	}
 
 	[Test]
+	public async Task SetupSequence_Async_ReturnsNullTaskWhenExhausted()
+	{
+		Mock<IChocolateDispenser> dispenser = new();
+		dispenser.SetupSequence(d => d.DispenseAsync(It.IsAny<string>(), It.IsAny<int>()))
+			.ReturnsAsync(true);
+
+		await That(await dispenser.Object.DispenseAsync("Dark", 1)).IsTrue();
+		Task<bool> exhausted = dispenser.Object.DispenseAsync("Dark", 1);
+		await That((object?)exhausted).IsNull()
+			.Because("an exhausted Moq sequence returns default(T), not a completed task");
+	}
+
+	[Test]
 	public async Task SetupSequence_ReturnsValuesInOrder_ThenDefault()
 	{
 		Mock<IChocolateDispenser> dispenser = new();
@@ -147,6 +160,8 @@ public class SetupTests
 		await That(() => dispenser.Object.Dispense("Dark", 1))
 			.Throws<InvalidChocolateException>();
 		await That(dispenser.Object.Dispense("Dark", 1)).IsFalse();
+		await That(dispenser.Object.Dispense("Dark", 1)).IsFalse()
+			.Because("an exhausted Moq sequence returns the default value instead of starting over");
 	}
 
 	[Test]

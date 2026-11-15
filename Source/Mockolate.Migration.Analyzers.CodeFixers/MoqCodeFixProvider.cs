@@ -20,6 +20,10 @@ namespace Mockolate.Migration.Analyzers;
 [Shared]
 public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 {
+	private static readonly SymbolDisplayFormat NullableTypeDisplayFormat =
+		SymbolDisplayFormat.MinimallyQualifiedFormat.AddMiscellaneousOptions(
+			SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
+
 	/// <inheritdoc />
 	protected override async Task<Document> ConvertAssertionAsync(CodeFixContext context,
 		ExpressionSyntax expressionSyntax, CancellationToken cancellationToken)
@@ -82,6 +86,10 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		Dictionary<InvocationExpressionSyntax, MemberAccessExpressionSyntax> setupPropertyAccessReplacements =
 			FindAndBuildSetupPropertyAccessReplacements(allInvocations, semanticModel, mockSymbol, cancellationToken);
 
+		Dictionary<SyntaxNode, Func<SyntaxNode, SyntaxNode>> setupSequenceRewrites =
+			FindAndBuildSetupSequenceRewrites(
+				setupCallReplacements.Keys.Concat(setupPropertyAccessReplacements.Keys), semanticModel, cancellationToken);
+
 		Dictionary<InvocationExpressionSyntax, InvocationExpressionSyntax> setupPropertyCallReplacements =
 			FindAndBuildSetupPropertyCallReplacements(allInvocations, semanticModel, mockSymbol, cancellationToken);
 
@@ -111,6 +119,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 		nodesToReplace.AddRange(objectAccesses);
 		nodesToReplace.AddRange(setupCallReplacements.Keys.Where(k => !setupsWrappedByCallbacks.Contains(k)));
 		nodesToReplace.AddRange(setupPropertyAccessReplacements.Keys);
+		nodesToReplace.AddRange(setupSequenceRewrites.Keys);
 		nodesToReplace.AddRange(setupPropertyCallReplacements.Keys);
 		nodesToReplace.AddRange(callbackReplacements.Keys);
 		nodesToReplace.AddRange(verifyCallReplacements.Keys);
@@ -131,6 +140,11 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 				if (replaceDeclarationType && original == declarationType)
 				{
 					return typeArgument.WithTriviaFrom(declarationType!);
+				}
+
+				if (setupSequenceRewrites.TryGetValue(original, out Func<SyntaxNode, SyntaxNode>? setupSequenceRewrite))
+				{
+					return setupSequenceRewrite(rewritten);
 				}
 
 				if (original is InvocationExpressionSyntax invocation)
@@ -545,6 +559,145 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 
 		return result;
 	}
+
+	/// <summary>
+	///     Builds the rewrites that keep Moq's behavior of an exhausted <c>SetupSequence</c>.
+	/// </summary>
+	/// <remarks>
+	///     Once its steps are used up, a Moq sequence returns <c>default(T)</c> or does nothing for a <see langword="void" />
+	///     method, while a Mockolate sequence starts over from its first step.
+	/// </remarks>
+	private static Dictionary<SyntaxNode, Func<SyntaxNode, SyntaxNode>> FindAndBuildSetupSequenceRewrites(
+		IEnumerable<InvocationExpressionSyntax> migratedSetups,
+		SemanticModel? semanticModel,
+		CancellationToken cancellationToken)
+	{
+		Dictionary<SyntaxNode, Func<SyntaxNode, SyntaxNode>> result = [];
+		if (semanticModel is null)
+		{
+			return result;
+		}
+
+		foreach (InvocationExpressionSyntax setup in migratedSetups)
+		{
+			if (setup.Expression is not MemberAccessExpressionSyntax { Name.Identifier.Text: "SetupSequence", } ||
+			    setup.ArgumentList.Arguments[0].Expression is not LambdaExpressionSyntax lambda ||
+			    semanticModel.GetSymbolInfo(lambda.Body, cancellationToken).Symbol is not { } member)
+			{
+				continue;
+			}
+
+			ITypeSymbol? returnType = member switch
+			{
+				IMethodSymbol { ReturnsVoid: false, } method => method.ReturnType,
+				IPropertySymbol property => property.Type,
+				_ => null,
+			};
+			if (returnType is null && member is not IMethodSymbol)
+			{
+				continue;
+			}
+
+			ExpressionSyntax? defaultValue = returnType is null
+				? null
+				: BuildDefaultValue(returnType, semanticModel, setup.SpanStart);
+
+			(InvocationExpressionSyntax chain, int steps) = FindSetupSequenceChain(setup);
+			if (steps > 0)
+			{
+				result[chain] = defaultValue is null
+					? node => RewriteVoidSequenceSteps((ExpressionSyntax)node, steps)
+					: node => AppendDefaultSequenceStep((InvocationExpressionSyntax)node, defaultValue);
+			}
+			else if (setup.FirstAncestorOrSelf<StatementSyntax>() is { } statement)
+			{
+				SyntaxTriviaList todo = BuildTodoTrivia(statement, defaultValue is null
+					? "// TODO(MockolateM001): Mockolate starts the sequence over after the last step, Moq does nothing; add '.OnlyOnce()' to each 'Throws' step and replace 'Pass()' with 'DoesNotThrow()'"
+					: $"// TODO(MockolateM001): Mockolate starts the sequence over after the last step, Moq returns the default value; end it with '.Returns({defaultValue}).Forever()'");
+				result[statement] = node => node.WithLeadingTrivia(todo);
+			}
+		}
+
+		return result;
+	}
+
+	private static ExpressionSyntax BuildDefaultValue(ITypeSymbol type, SemanticModel semanticModel, int position)
+	{
+		ExpressionSyntax defaultValue = SyntaxFactory.DefaultExpression(
+			SyntaxFactory.ParseTypeName(type.ToMinimalDisplayString(semanticModel, position, NullableTypeDisplayFormat)));
+		return !type.IsValueType && type.NullableAnnotation != NullableAnnotation.Annotated &&
+		       semanticModel.GetNullableContext(position).WarningsEnabled()
+			? SyntaxFactory.PostfixUnaryExpression(SyntaxKind.SuppressNullableWarningExpression, defaultValue)
+			: defaultValue;
+	}
+
+	private static (InvocationExpressionSyntax Chain, int Steps) FindSetupSequenceChain(InvocationExpressionSyntax setup)
+	{
+		InvocationExpressionSyntax chain = setup;
+		int steps = 0;
+		while (chain.Parent is MemberAccessExpressionSyntax memberAccess &&
+		       memberAccess.Expression == chain &&
+		       memberAccess.Name.Identifier.Text is "Returns" or "ReturnsAsync" or "Throws" or "ThrowsAsync"
+			       or "Pass" or "PassAsync" or "CallBase" &&
+		       memberAccess.Parent is InvocationExpressionSyntax step)
+		{
+			chain = step;
+			steps++;
+		}
+
+		return (chain, steps);
+	}
+
+	private static InvocationExpressionSyntax AppendDefaultSequenceStep(InvocationExpressionSyntax chain,
+		ExpressionSyntax defaultValue)
+	{
+		MemberAccessExpressionSyntax lastStep = (MemberAccessExpressionSyntax)chain.Expression;
+		InvocationExpressionSyntax returnsDefault = SyntaxFactory.InvocationExpression(
+			SyntaxFactory.MemberAccessExpression(
+				SyntaxKind.SimpleMemberAccessExpression,
+				chain.WithTrailingTrivia(lastStep.Expression.GetTrailingTrivia()),
+				lastStep.OperatorToken,
+				SyntaxFactory.IdentifierName("Returns")),
+			SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(defaultValue))));
+		return AppendInvocation(returnsDefault, "Forever").WithTrailingTrivia(chain.GetTrailingTrivia());
+	}
+
+	private static ExpressionSyntax RewriteVoidSequenceSteps(ExpressionSyntax expression, int steps)
+	{
+		if (steps == 0 ||
+		    expression is not InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax step, } invocation)
+		{
+			return expression;
+		}
+
+		MemberAccessExpressionSyntax rewrittenStep =
+			step.WithExpression(RewriteVoidSequenceSteps(step.Expression, steps - 1));
+		return step.Name.Identifier.Text switch
+		{
+			"Pass" => invocation.WithExpression(
+				rewrittenStep.WithName(SyntaxFactory.IdentifierName("DoesNotThrow").WithTriviaFrom(step.Name))),
+			"Throws" => AppendInvocation(invocation.WithExpression(rewrittenStep), "OnlyOnce"),
+			_ => invocation.WithExpression(rewrittenStep),
+		};
+	}
+
+	/// <remarks>
+	///     The tokens get explicit empty trivia, because elastic trivia would let the formatter re-indent the following
+	///     steps of the chain.
+	/// </remarks>
+	private static InvocationExpressionSyntax AppendInvocation(ExpressionSyntax expression, string methodName) =>
+		SyntaxFactory.InvocationExpression(
+				SyntaxFactory.MemberAccessExpression(
+					SyntaxKind.SimpleMemberAccessExpression,
+					expression.WithoutTrailingTrivia(),
+					SyntaxFactory.Token(SyntaxTriviaList.Empty, SyntaxKind.DotToken, SyntaxTriviaList.Empty),
+					SyntaxFactory.IdentifierName(
+						SyntaxFactory.Identifier(SyntaxTriviaList.Empty, methodName, SyntaxTriviaList.Empty))),
+				SyntaxFactory.ArgumentList(
+					SyntaxFactory.Token(SyntaxTriviaList.Empty, SyntaxKind.OpenParenToken, SyntaxTriviaList.Empty),
+					SyntaxFactory.SeparatedList<ArgumentSyntax>(),
+					SyntaxFactory.Token(SyntaxTriviaList.Empty, SyntaxKind.CloseParenToken, SyntaxTriviaList.Empty)))
+			.WithTrailingTrivia(expression.GetTrailingTrivia());
 
 	/// <summary>
 	///     Returns the mock identifier expression when <paramref name="expression" /> is the mock

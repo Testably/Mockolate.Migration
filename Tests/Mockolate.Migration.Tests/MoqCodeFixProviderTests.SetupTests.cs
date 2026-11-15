@@ -783,6 +783,93 @@ public partial class MoqCodeFixProviderTests
 				""");
 
 		[Test]
+		public async Task SetupSequence_AsyncMethod_WithReturnsAsyncChain_ReturnsNullTaskWhenExhausted()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using System;
+				using System.Threading.Tasks;
+				using Moq;
+
+				namespace MyCode;
+
+				public interface IFoo { Task<int> GetCountAsync(); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = [|new Mock<IFoo>()|];
+						mock.SetupSequence(f => f.GetCountAsync())
+							.ReturnsAsync(1)
+							.ThrowsAsync(new Exception("Error"));
+					}
+				}
+				""",
+				"""
+				using System;
+				using System.Threading.Tasks;
+				using Moq;
+				using Mockolate;
+
+				namespace MyCode;
+
+				public interface IFoo { Task<int> GetCountAsync(); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = IFoo.CreateMock();
+						mock.Mock.Setup.GetCountAsync()
+							.ReturnsAsync(1)
+							.ThrowsAsync(new Exception("Error"))
+							.Returns(default(Task<int>)).Forever();
+					}
+				}
+				""");
+
+		[Test]
+		public async Task SetupSequence_Method_InNullableContext_SuppressesNullWarningOfDefault()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				#nullable enable
+				using Moq;
+
+				namespace MyCode;
+
+				public interface IFoo { string GetName(); string? GetNickname(); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = [|new Mock<IFoo>()|];
+						mock.SetupSequence(f => f.GetName()).Returns("a");
+						mock.SetupSequence(f => f.GetNickname()).Returns("b");
+					}
+				}
+				""",
+				"""
+				#nullable enable
+				using Moq;
+				using Mockolate;
+
+				namespace MyCode;
+
+				public interface IFoo { string GetName(); string? GetNickname(); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = IFoo.CreateMock();
+						mock.Mock.Setup.GetName().Returns("a").Returns(default(string)!).Forever();
+						mock.Mock.Setup.GetNickname().Returns("b").Returns(default(string?)).Forever();
+					}
+				}
+				""");
+
+		[Test]
 		public async Task SetupSequence_Method_WithReturnsAndThrowsChain_MigratesToSetup()
 			=> await Verifier.VerifyCodeFixAsync(
 				"""
@@ -822,7 +909,8 @@ public partial class MoqCodeFixProviderTests
 						mock.Mock.Setup.Dispense({|CS0104:It|}.IsAny<string>(), {|CS0104:It|}.IsAny<int>())
 							.Returns(true)
 							.Throws(new Exception("Error"))
-							.Returns(false);
+							.Returns(false)
+							.Returns(default(bool)).Forever();
 					}
 				}
 				""");
@@ -859,7 +947,7 @@ public partial class MoqCodeFixProviderTests
 					public void Test()
 					{
 						var mock = IFoo.CreateMock();
-						mock.Mock.Setup.GetCount().Returns(1).Returns(2);
+						mock.Mock.Setup.GetCount().Returns(1).Returns(2).Returns(default(int)).Forever();
 					}
 				}
 				""");
@@ -905,7 +993,8 @@ public partial class MoqCodeFixProviderTests
 						// TODO(MockolateM001): register the nested 'mock.Child' chain explicitly in the mock setup (Mockolate doesn't auto-mock recursively)
 						{|CS1929:mock.Child|}.Mock.Setup.GetCount()
 							.Returns(1)
-							.Throws<InvalidOperationException>();
+							.Throws<InvalidOperationException>()
+							.Returns(default(int)).Forever();
 					}
 				}
 				""");
@@ -942,7 +1031,175 @@ public partial class MoqCodeFixProviderTests
 					public void Test()
 					{
 						var mock = IFoo.CreateMock();
-						mock.Mock.Setup.Name.Returns("a").Returns("b");
+						mock.Mock.Setup.Name.Returns("a").Returns("b").Returns(default(string)).Forever();
+					}
+				}
+				""");
+
+		[Test]
+		public async Task SetupSequence_ValueTaskMethod_WithReturnsAsyncChain_ReturnsDefaultWhenExhausted()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using System.Threading.Tasks;
+				using Moq;
+
+				namespace MyCode;
+
+				public interface IFoo { ValueTask<int> GetCountAsync(); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = [|new Mock<IFoo>()|];
+						mock.SetupSequence(f => f.GetCountAsync()).ReturnsAsync(1).ReturnsAsync(2);
+					}
+				}
+				""",
+				"""
+				using System.Threading.Tasks;
+				using Moq;
+				using Mockolate;
+
+				namespace MyCode;
+
+				public interface IFoo { ValueTask<int> GetCountAsync(); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = IFoo.CreateMock();
+						mock.Mock.Setup.GetCountAsync().ReturnsAsync(1).ReturnsAsync(2).Returns(default(ValueTask<int>)).Forever();
+					}
+				}
+				""");
+
+		[Test]
+		public async Task SetupSequence_VoidMethod_WithPassAndThrowsChain_ThrowsOnlyOnce()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using System;
+				using Moq;
+
+				namespace MyCode;
+
+				public interface IFoo { void Reset(int value); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = [|new Mock<IFoo>()|];
+						mock.SetupSequence(f => f.Reset(It.IsAny<int>()))
+							.Pass()
+							.Throws(new Exception("Error"))
+							.Throws<InvalidOperationException>()
+							.Pass();
+					}
+				}
+				""",
+				"""
+				using System;
+				using Moq;
+				using Mockolate;
+
+				namespace MyCode;
+
+				public interface IFoo { void Reset(int value); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = IFoo.CreateMock();
+						mock.Mock.Setup.Reset({|CS0104:It|}.IsAny<int>())
+							.DoesNotThrow()
+							.Throws(new Exception("Error")).OnlyOnce()
+							.Throws<InvalidOperationException>().OnlyOnce()
+							.DoesNotThrow();
+					}
+				}
+				""");
+
+		[Test]
+		public async Task SetupSequence_WithoutChainedSteps_AddsTodo()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using Moq;
+
+				namespace MyCode;
+
+				public interface IFoo { int GetCount(); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = [|new Mock<IFoo>()|];
+						var sequence = mock.SetupSequence(f => f.GetCount());
+						sequence.Returns(1);
+					}
+				}
+				""",
+				"""
+				using Moq;
+				using Mockolate;
+
+				namespace MyCode;
+
+				public interface IFoo { int GetCount(); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = IFoo.CreateMock();
+						// TODO(MockolateM001): Mockolate starts the sequence over after the last step, Moq returns the default value; end it with '.Returns(default(int)).Forever()'
+						var sequence = mock.Mock.Setup.GetCount();
+						sequence.Returns(1);
+					}
+				}
+				""");
+
+		[Test]
+		public async Task SetupSequence_WithoutChainedStepsOnVoidMethod_AddsTodo()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using System;
+				using Moq;
+
+				namespace MyCode;
+
+				public interface IFoo { void Reset(); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = [|new Mock<IFoo>()|];
+						var sequence = mock.SetupSequence(f => f.Reset());
+						sequence.Throws(new Exception("Error"));
+					}
+				}
+				""",
+				"""
+				using System;
+				using Moq;
+				using Mockolate;
+
+				namespace MyCode;
+
+				public interface IFoo { void Reset(); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = IFoo.CreateMock();
+						// TODO(MockolateM001): Mockolate starts the sequence over after the last step, Moq does nothing; add '.OnlyOnce()' to each 'Throws' step and replace 'Pass()' with 'DoesNotThrow()'
+						var sequence = mock.Mock.Setup.Reset();
+						sequence.Throws(new Exception("Error"));
 					}
 				}
 				""");
