@@ -20,4 +20,9 @@
 				   HintPath="$(PkgMockolate)\analyzers\dotnet\cs\Mockolate.SourceGenerators.dll"/>
 	</ItemGroup>
 
+	<ItemGroup>
+		<AssemblyMetadata Include="@(PackageVersion->WithMetadataValue('Identity', 'Moq'))" Value="%(Version)"/>
+		<AssemblyMetadata Include="@(PackageVersion->WithMetadataValue('Identity', 'NSubstitute'))" Value="%(Version)"/>
+	</ItemGroup>
+
 </Project>

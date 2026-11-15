@@ -19,8 +19,7 @@ public static partial class CSharpCodeFixVerifier<TAnalyzer, TCodeFix>
 		{
 			ReferenceAssemblies = ReferenceAssemblies.Net.Net80.AddPackages(
 			[
-				new PackageIdentity("Moq", "4.20.72"),
-				new PackageIdentity("NSubstitute", "5.3.0"),
+				..CSharpVerifierHelper.MockingLibraries,
 				new PackageIdentity("Mockolate", typeof(MockBehavior).Assembly.GetName().Version!.ToString(3)),
 			]);
 			TestBehaviors |= TestBehaviors.SkipGeneratedSourcesCheck;

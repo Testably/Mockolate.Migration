@@ -36,5 +36,5 @@ For a new source library:
 
 1. Add a descriptor to `Rules.cs` with the next free `MockolateM###` ID, add `<ID>Title`, `<ID>MessageFormat`, `<ID>Description` and `<ID>CodeFixTitle` to `Resources.resx` (regenerating `Resources.Designer.cs`), and record the rule in `AnalyzerReleases.Unshipped.md`.
 2. Add an analyzer next to `MoqAnalyzer.cs` and a fixer deriving from `AssertionCodeFixProvider(Rules.<YourRule>)`.
-3. Add the library to `Directory.Packages.props` and to the `ReferenceAssemblies` in the verifiers, add test classes and a Playground project, and register the Playground in `Mockolate.Migration.slnx` and in `UnitTestProjects` in `Pipeline/Build.UnitTest.cs`.
+3. Add the library to `Directory.Packages.props`, to the `AssemblyMetadata` items in `Mockolate.Migration.Tests.csproj` and to `MockingLibraries` in `Verifiers/CSharpVerifierHelper.cs`, add test classes and a Playground project, and register the Playground in `Mockolate.Migration.slnx` and in `UnitTestProjects` in `Pipeline/Build.UnitTest.cs`.
 4. Document the diagnostic in the README table.
