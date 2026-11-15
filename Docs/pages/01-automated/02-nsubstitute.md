@@ -2,11 +2,15 @@
 description: How the Mockolate.Migration code fix rewrites NSubstitute substitutes, setups, verifications and CallInfo callbacks to Mockolate.
 ---
 
+import ApplyFix from '@site/src/components/ApplyFix';
+
 # Migrating from NSubstitute
 
 The `MockolateM002` code fix rewrites `Substitute.For<T>(…)` to `T.CreateMock(…)` and moves the setups (`substitute.Method(args).Returns(…)`) and verifications (`substitute.Received().Method(…)`) to `Mock.Setup` and `Mock.Verify`.
 
 The examples use the `IChocolateDispenser` interface from the [migration overview](/Mockolate/migration/) and the `VendingMachine` from [Getting started](../../01-getting-started.mdx). The code fix keeps your variable names, so the mock keeps its name and `sut` stays the system under test.
+
+<ApplyFix id="MockolateM002" migrateTo="Mockolate">
 
 ```csharp title="Before (NSubstitute)"
 IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -28,7 +32,11 @@ sut.Buy("Dark", 4);
 dispenser.Mock.Verify.Dispense("Dark", It.IsAny<int>()).Once();
 ```
 
+</ApplyFix>
+
 Multiple return values become a [sequence](../../05-setup/01-methods.md#sequences) that ends with `.Forever()`, so the last value repeats as in NSubstitute. `When(…).Do(…)` becomes a setup with a `Do` callback, and raised events go through `Mock.Raise`:
+
+<ApplyFix id="MockolateM002" migrateTo="Mockolate">
 
 ```csharp title="Before (NSubstitute)"
 IChocolateDispenser dispenser = Substitute.For<IChocolateDispenser>();
@@ -45,6 +53,8 @@ dispenser.Mock.Setup.Dispense("Dark", 1).Returns(true).Returns(true).Returns(fal
 dispenser.Mock.Setup.Dispense("Milk", It.IsAny<int>()).Do(() => refills++);
 dispenser.Mock.Raise.ChocolateDispensed("Dark", 2);
 ```
+
+</ApplyFix>
 
 ## CallInfo callbacks
 
