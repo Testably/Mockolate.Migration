@@ -41,6 +41,7 @@ What the code fix rewrites, with examples and the supported constructs, is descr
 The code fix leaves a `// TODO(MockolateM001)` or `// TODO(MockolateM002)` comment where it cannot finish the migration on its own. Search for them after you apply the fix:
 
 - **Nested mocks**: Moq and NSubstitute create mocks for nested members (`m => m.Child.Prop`) automatically. Mockolate does not, so set up the parent to return a mock for `Child` yourself.
+- **Moq sequences whose steps are not chained to `SetupSequence(…)`**, for example when the setup is stored in a variable. After the last step, Moq returns the default value (or does nothing for a `void` method), while a Mockolate [sequence](../../05-setup/01-methods.md#sequences) starts over. End the sequence as the comment describes.
 - **[CallInfo callbacks](./02-nsubstitute.md#callinfo-callbacks)** that cannot be rewritten safely, for example when they use `call` directly, compute the index at runtime, assign `out` or `ref` arguments, call an ambiguous `call.Arg<T>()`, or declare local variables with the same names as the parameters of the method.
 
 The code fix does not mark these cases:

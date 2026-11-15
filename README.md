@@ -88,7 +88,8 @@ mock.Mock.Verify.Changed.Subscribed().Once();
 | `mock.Setup(m => m.Prop)` / `mock.SetupGet(...)`         | `mock.Mock.Setup.Prop`                                                      |
 | `mock.SetupProperty(m => m.Prop)`                        | `mock.Mock.Setup.Prop.Register()`                                           |
 | `mock.SetupProperty(m => m.Prop, value)`                 | `mock.Mock.Setup.Prop.InitializeWith(value)`                                |
-| `mock.SetupSequence(...).Returns(a).Returns(b)`          | `mock.Mock.Setup.Method(...).Returns(a).Returns(b)`                         |
+| `mock.SetupSequence(...).Returns(a).Returns(b)`          | `mock.Mock.Setup.Method(...).Returns(a).Returns(b).Returns(default(T)).Forever()` |
+| `mock.SetupSequence(...).Pass().Throws(e)` (void method) | `mock.Mock.Setup.Method(...).DoesNotThrow().Throws(e).OnlyOnce()`           |
 | `.Returns(...)` / `.ReturnsAsync(...)` / `.Throws(...)`  | preserved on the Mockolate setup chain                                      |
 | `.Callback(...)`                                         | `.Do(...)` on the Mockolate setup                                           |
 | `mock.InSequence(seq).Setup(...)` (and other setups)     | `.InSequence(...)` wrapper is stripped; use `Verify…Then(...)` for ordering |

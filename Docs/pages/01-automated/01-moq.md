@@ -82,7 +82,7 @@ dispenser.Mock.Setup.Dispense("Dark", 1).Returns(true);
 
 ## Setups
 
-`Callback` becomes `Do`, and a `SetupSequence` becomes a setup with the same chain of `Returns`, which Mockolate uses as a [sequence](../../05-setup/01-methods.md#sequences):
+`Callback` becomes `Do`, and a `SetupSequence` becomes a setup with the same chain of `Returns`, which Mockolate uses as a [sequence](../../05-setup/01-methods.md#sequences). A Mockolate sequence starts over after its last step, while Moq returns the default value, so the code fix ends the chain with `.Returns(default(T)).Forever()`:
 
 <ApplyFix id="MockolateM001" migrateTo="Mockolate">
 
@@ -115,7 +115,9 @@ dispenser.Mock.Setup.Dispense("Dark", It.IsAny<int>())
 // highlight-next-line
 dispenser.Mock.Setup.Dispense("Milk", It.IsAny<int>())
     .Returns(true)
-    .Returns(false);
+    .Returns(false)
+// highlight-next-line
+    .Returns(default(bool)).Forever();
 // highlight-next-line
 dispenser.Mock.Setup.TotalDispensed.InitializeWith(10);
 ```
@@ -201,7 +203,8 @@ dispenser.Mock.Verify.ChocolateDispensed.Unsubscribed().Never();
 | `mock.Setup(m => m.Prop)`, `mock.SetupGet(m => m.Prop)`   | `mock.Mock.Setup.Prop`                                                 |
 | `mock.SetupProperty(m => m.Prop)`                         | `mock.Mock.Setup.Prop.Register()`                                      |
 | `mock.SetupProperty(m => m.Prop, value)`                  | `mock.Mock.Setup.Prop.InitializeWith(value)`                           |
-| `mock.SetupSequence(…).Returns(a).Returns(b)`             | `mock.Mock.Setup.Method(…).Returns(a).Returns(b)`                      |
+| `mock.SetupSequence(…).Returns(a).Returns(b)`             | `mock.Mock.Setup.Method(…).Returns(a).Returns(b).Returns(default(T)).Forever()` |
+| `mock.SetupSequence(…).Pass().Throws(e)` (void method)    | `mock.Mock.Setup.Method(…).DoesNotThrow().Throws(e).OnlyOnce()`        |
 | `.Returns(…)`, `.ReturnsAsync(…)`, `.Throws(…)`           | kept on the Mockolate setup                                            |
 | `.Callback(…)`                                            | `.Do(…)`                                                               |
 | `mock.InSequence(sequence).Setup(…)`                      | `mock.Mock.Setup.Method(…)` (the `InSequence` wrapper is removed)      |
