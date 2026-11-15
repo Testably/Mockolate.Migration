@@ -34,7 +34,7 @@ dispenser.Mock.Verify.Dispense("Dark", It.IsAny<int>()).Once();
 
 </ApplyFix>
 
-Strict mocks get a [behavior](../../04-create-mocks.md#customizing-mock-behavior) that throws when no setup matches. Properties, raising events and verifying subscriptions are migrated as well:
+Strict mocks get a [behavior](../../04-create-mocks.md#customizing-mock-behavior) that throws when no setup matches, written as `Mockolate.MockBehavior` because Moq has a `MockBehavior` as well. Properties, raising events and verifying subscriptions are migrated as well:
 
 <ApplyFix id="MockolateM001" migrateTo="Mockolate">
 
@@ -46,7 +46,7 @@ dispenser.VerifyAdd(m => m.ChocolateDispensed += It.IsAny<ChocolateDispensedDele
 ```
 
 ```csharp title="After (Mockolate)"
-IChocolateDispenser dispenser = IChocolateDispenser.CreateMock(MockBehavior.Default.ThrowingWhenNotSetup());
+IChocolateDispenser dispenser = IChocolateDispenser.CreateMock(Mockolate.MockBehavior.Default.ThrowingWhenNotSetup());
 dispenser.Mock.Setup.TotalDispensed.InitializeWith(10);
 dispenser.Mock.Raise.ChocolateDispensed("Dark", 2);
 dispenser.Mock.Verify.ChocolateDispensed.Subscribed().Once();
