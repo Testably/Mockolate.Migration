@@ -1809,17 +1809,7 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 					.WithTriviaFrom(original);
 
 			case "IsRegex":
-				{
-					InvocationExpressionSyntax matchesInvocation =
-						BuildItInvocation(itIdentifier, "Matches", null, rewritten.ArgumentList)
-							.WithTriviaFrom(original);
-					return SyntaxFactory.InvocationExpression(
-						SyntaxFactory.MemberAccessExpression(
-							SyntaxKind.SimpleMemberAccessExpression,
-							matchesInvocation,
-							SyntaxFactory.IdentifierName("AsRegex")),
-						SyntaxFactory.ArgumentList());
-				}
+				return BuildMatchesAsRegex(itIdentifier, rewritten.ArgumentList, original);
 
 			default:
 				return BuildItInvocation(itIdentifier, methodName, typeArgs, rewritten.ArgumentList)
@@ -1967,6 +1957,34 @@ public class MoqCodeFixProvider() : AssertionCodeFixProvider(Rules.MoqRule)
 
 		typeArgs = tArgs;
 		return true;
+	}
+
+	/// <summary>
+	///     Moq's <c>It.IsRegex</c> is case-sensitive unless its options say otherwise, whereas Mockolate's
+	///     <c>It.Matches</c> ignores the case by default, so the options go to <c>AsRegex</c> and <c>CaseSensitive()</c>
+	///     is appended, which keeps an <c>IgnoreCase</c> option in effect.
+	/// </summary>
+	private static InvocationExpressionSyntax BuildMatchesAsRegex(
+		IdentifierNameSyntax itIdentifier,
+		ArgumentListSyntax args,
+		SyntaxNode original)
+	{
+		ArgumentSyntax pattern = args.Arguments[0].WithNameColon(null);
+		InvocationExpressionSyntax matchesInvocation = BuildItInvocation(itIdentifier, "Matches", null,
+				SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList(pattern)))
+			.WithTriviaFrom(original);
+		InvocationExpressionSyntax asRegexInvocation = SyntaxFactory.InvocationExpression(
+			SyntaxFactory.MemberAccessExpression(
+				SyntaxKind.SimpleMemberAccessExpression,
+				matchesInvocation,
+				SyntaxFactory.IdentifierName("AsRegex")),
+			SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(args.Arguments.Skip(1))));
+		return SyntaxFactory.InvocationExpression(
+			SyntaxFactory.MemberAccessExpression(
+				SyntaxKind.SimpleMemberAccessExpression,
+				asRegexInvocation,
+				SyntaxFactory.IdentifierName("CaseSensitive")),
+			SyntaxFactory.ArgumentList());
 	}
 
 	private static InvocationExpressionSyntax BuildItInvocation(

@@ -184,10 +184,11 @@ dispenser.Mock.Verify.TotalDispensed.Set(10).Never();
 | `It.IsAny<T>()`                                           | `It.IsAny<T>()`                                                        |
 | `It.Is<T>(predicate)`                                     | `It.Satisfies<T>(predicate)`                                           |
 | `It.IsInRange(a, b, Range.Inclusive)`                     | `It.IsInRange(a, b)`                                                   |
-| `It.IsRegex(pattern)`                                     | `It.Matches(pattern).AsRegex()`                                        |
+| `It.IsRegex(pattern)`                                     | `It.Matches(pattern).AsRegex().CaseSensitive()`                        |
+| `It.IsRegex(pattern, options)`                            | `It.Matches(pattern).AsRegex(options).CaseSensitive()`                 |
 | `It.Ref<T>.IsAny`, `out` parameters                       | `It.IsAnyRef<T>()`, `It.IsOut(() => value)`                            |
 
-`It.IsAny` stays as it is, while `It.Is` with a predicate becomes `It.Satisfies` and `It.IsRegex` becomes `It.Matches(…).AsRegex()`. See [parameter matching](../../06-parameter-matching.md) for the Mockolate matchers.
+`It.IsAny` stays as it is, while `It.Is` with a predicate becomes `It.Satisfies` and `It.IsRegex` becomes `It.Matches(…).AsRegex(…)`. `It.Matches` ignores the case by default, so the code fix appends `CaseSensitive()` to match the case like Moq does; a `RegexOptions.IgnoreCase` option still applies. See [parameter matching](../../06-parameter-matching.md) for the Mockolate matchers.
 
 <ApplyFix id="MockolateM001" migrateTo="Mockolate">
 
@@ -200,7 +201,7 @@ dispenser.Setup(m => m.Dispense(It.IsRegex("^M"), It.IsAny<int>())).Returns(fals
 ```csharp title="After (Mockolate)"
 IChocolateDispenser dispenser = IChocolateDispenser.CreateMock();
 dispenser.Mock.Setup.Dispense(It.Satisfies<string>(type => type.StartsWith("D")), It.IsAny<int>()).Returns(true);
-dispenser.Mock.Setup.Dispense(It.Matches("^M").AsRegex(), It.IsAny<int>()).Returns(false);
+dispenser.Mock.Setup.Dispense(It.Matches("^M").AsRegex().CaseSensitive(), It.IsAny<int>()).Returns(false);
 ```
 
 </ApplyFix>

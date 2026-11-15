@@ -304,7 +304,85 @@ public partial class MoqCodeFixProviderTests
 					public void Test()
 					{
 						var mock = IFoo.CreateMock();
-						mock.Mock.Setup.Bar({|CS0104:It|}.Matches("^A").AsRegex()).Returns(true);
+						mock.Mock.Setup.Bar({|CS0104:It|}.Matches("^A").AsRegex().CaseSensitive()).Returns(true);
+					}
+				}
+				""");
+
+		[Test]
+		public async Task Method_WithItIsRegex_WithNamedArguments_MigratedToMatchesAsRegexWithOptions()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using System.Text.RegularExpressions;
+				using Moq;
+
+				namespace MyCode;
+
+				public interface IFoo { bool Bar(string x); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = [|new Mock<IFoo>()|];
+						mock.Setup(m => m.Bar(It.IsRegex(regex: "^A", options: RegexOptions.Multiline))).Returns(true);
+					}
+				}
+				""",
+				"""
+				using System.Text.RegularExpressions;
+				using Moq;
+				using Mockolate;
+
+				namespace MyCode;
+
+				public interface IFoo { bool Bar(string x); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = IFoo.CreateMock();
+						mock.Mock.Setup.Bar({|CS0104:It|}.Matches("^A").AsRegex(options: RegexOptions.Multiline).CaseSensitive()).Returns(true);
+					}
+				}
+				""");
+
+		[Test]
+		public async Task Method_WithItIsRegex_WithOptions_MigratedToMatchesAsRegexWithOptions()
+			=> await Verifier.VerifyCodeFixAsync(
+				"""
+				using System.Text.RegularExpressions;
+				using Moq;
+
+				namespace MyCode;
+
+				public interface IFoo { bool Bar(string x); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = [|new Mock<IFoo>()|];
+						mock.Setup(m => m.Bar(It.IsRegex("^A", RegexOptions.IgnoreCase))).Returns(true);
+					}
+				}
+				""",
+				"""
+				using System.Text.RegularExpressions;
+				using Moq;
+				using Mockolate;
+
+				namespace MyCode;
+
+				public interface IFoo { bool Bar(string x); }
+
+				public class Tests
+				{
+					public void Test()
+					{
+						var mock = IFoo.CreateMock();
+						mock.Mock.Setup.Bar({|CS0104:It|}.Matches("^A").AsRegex(RegexOptions.IgnoreCase).CaseSensitive()).Returns(true);
 					}
 				}
 				""");

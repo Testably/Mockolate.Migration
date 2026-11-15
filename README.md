@@ -100,7 +100,8 @@ mock.Mock.Verify.Changed.Subscribed().Once();
 | `It.IsAny<T>()`                                          | preserved as `It.IsAny<T>()`                                                |
 | `It.Is<T>(predicate)`                                    | `It.Satisfies<T>(predicate)`                                                |
 | `It.IsInRange(lo, hi, Range.Inclusive)`                  | `It.IsInRange(lo, hi)` (the `Range` argument is dropped)                    |
-| `It.IsRegex(pattern)`                                    | `It.Matches(pattern).AsRegex()`                                             |
+| `It.IsRegex(pattern)`                                    | `It.Matches(pattern).AsRegex().CaseSensitive()`                             |
+| `It.IsRegex(pattern, options)`                           | `It.Matches(pattern).AsRegex(options).CaseSensitive()`                      |
 | `It.Ref<T>.IsAny` / `out` parameters                     | `It.IsAnyRef<T>()` / `It.IsOut(() => value)`                                |
 | Nested mocks (`mock.Setup(m => m.Child.Prop)`)           | `mock.Child.Mock.Setup.Prop` plus a `// TODO` comment to register `Child`   |
 
