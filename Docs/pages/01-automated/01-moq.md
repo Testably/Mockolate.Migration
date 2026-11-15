@@ -2,11 +2,15 @@
 description: How the Mockolate.Migration code fix rewrites Moq mocks, setups and verifications to Mockolate.
 ---
 
+import ApplyFix from '@site/src/components/ApplyFix';
+
 # Migrating from Moq
 
 The `MockolateM001` code fix rewrites `new Mock<T>(…)` to `T.CreateMock(…)`, changes the declared type from `Mock<T>` to `T`, drops every `.Object` access and moves setups and verifications to `Mock.Setup` and `Mock.Verify`.
 
 The examples use the `IChocolateDispenser` interface from the [migration overview](/Mockolate/migration/) and the `VendingMachine` from [Getting started](../../01-getting-started.mdx). The code fix keeps your variable names, so the mock keeps its name and `sut` stays the system under test.
+
+<ApplyFix id="MockolateM001" migrateTo="Mockolate">
 
 ```csharp title="Before (Moq)"
 Mock<IChocolateDispenser> dispenser = new Mock<IChocolateDispenser>();
@@ -28,7 +32,11 @@ sut.Buy("Dark", 4);
 dispenser.Mock.Verify.Dispense("Dark", It.IsAny<int>()).Once();
 ```
 
+</ApplyFix>
+
 Strict mocks get a [behavior](../../04-create-mocks.md#customizing-mock-behavior) that throws when no setup matches. Properties, raising events and verifying subscriptions are migrated as well:
+
+<ApplyFix id="MockolateM001" migrateTo="Mockolate">
 
 ```csharp title="Before (Moq)"
 Mock<IChocolateDispenser> dispenser = new Mock<IChocolateDispenser>(MockBehavior.Strict);
@@ -43,6 +51,8 @@ dispenser.Mock.Setup.TotalDispensed.InitializeWith(10);
 dispenser.Mock.Raise.ChocolateDispensed("Dark", 2);
 dispenser.Mock.Verify.ChocolateDispensed.Subscribed().Once();
 ```
+
+</ApplyFix>
 
 ## Supported Moq constructs
 
