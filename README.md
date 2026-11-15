@@ -5,11 +5,7 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Testably_Mockolate.Migration&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Testably_Mockolate.Migration)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Testably_Mockolate.Migration&metric=coverage)](https://sonarcloud.io/summary/overall?id=Testably_Mockolate.Migration)
 
-A Roslyn analyzer and code-fix provider that migrates [Moq](https://github.com/devlooped/moq) and
-[NSubstitute](https://nsubstitute.github.io) usage to
-[Mockolate](https://github.com/Testably/Mockolate). Drop the package into a project that uses one of
-those libraries and the analyzer flags each mock it can migrate; the accompanying code fix rewrites
-the setup, verification, and event APIs to their Mockolate equivalents.
+A Roslyn analyzer and code fix that migrate [Moq](https://github.com/devlooped/moq) and [NSubstitute](https://nsubstitute.github.io) usage to [Mockolate](https://github.com/Testably/Mockolate). Drop the package into a project that uses one of those libraries and the analyzer flags each mock it can migrate; the code fix rewrites the setup, verification, and event APIs to their Mockolate equivalents.
 
 The documentation is at **[docs.testably.org/Mockolate/migration/automated](https://docs.testably.org/Mockolate/migration/automated/)**.
 
@@ -21,8 +17,7 @@ Install the NuGet package into the project you want to migrate:
 dotnet add package Mockolate.Migration
 ```
 
-The package only needs to be referenced while you are migrating: it ships the analyzer and code fixer,
-not runtime code. Once the source library is gone from a project you can remove the reference again.
+The package only needs to be referenced while you are migrating: it ships the analyzer and the code fix, not runtime code. Once the source library is gone from a project you can remove the reference again.
 
 ## How it works
 
@@ -35,17 +30,11 @@ code fix from your IDE (Visual Studio, Rider, VS Code with C# Dev Kit) or via
 | `MockolateM001` | Moq            | *Migrate Moq to Mockolate*         |
 | `MockolateM002` | NSubstitute    | *Migrate NSubstitute to Mockolate* |
 
-The fixer rewrites the whole mock (the construction call, all setup calls on that mock, the
-corresponding verification calls, event wiring, and trailing `.Object` accesses for Moq) in a single
-step.
+The code fix rewrites the whole mock (the construction call, all setup calls on that mock, the corresponding verification calls, event wiring, and trailing `.Object` accesses for Moq) in a single step.
 
 ## Migrating from Moq
 
-The Moq fixer rewrites `new Mock<T>(...)` to `T.CreateMock(...)`, drops every trailing `.Object` access, and
-moves setups and verifications onto the strongly-typed `Mock.Setup` / `Mock.Verify` chains. Strict mocks are
-mapped to `MockBehavior.Default.ThrowingWhenNotSetup()`, `It.Is<T>(predicate)` becomes `It.Satisfies<T>(...)`,
-and event raising / verification are routed through `Mock.Raise` and event-specific
-`Mock.Verify.<Event>.Subscribed()` / `Unsubscribed()` calls.
+The Moq code fix rewrites `new Mock<T>(...)` to `T.CreateMock(...)`, drops every trailing `.Object` access, and moves setups and verifications onto the strongly-typed `Mock.Setup` / `Mock.Verify` chains. Strict mocks are mapped to `Mockolate.MockBehavior.Default.ThrowingWhenNotSetup()` (qualified, because Moq has a `MockBehavior` as well), `It.Is<T>(predicate)` becomes `It.Satisfies<T>(...)`, and event raising / verification are routed through `Mock.Raise` and event-specific `Mock.Verify.<Event>.Subscribed()` / `Unsubscribed()` calls.
 
 ```csharp
 // Before (Moq)
@@ -71,7 +60,7 @@ mock.Raise(m => m.Changed += null, EventArgs.Empty);
 mock.VerifyAdd(m => m.Changed += It.IsAny<EventHandler>(), Times.Once());
 
 // After (Mockolate)
-IFoo mock = IFoo.CreateMock(MockBehavior.Default.ThrowingWhenNotSetup());
+IFoo mock = IFoo.CreateMock(Mockolate.MockBehavior.Default.ThrowingWhenNotSetup());
 mock.Mock.Setup.Name.InitializeWith("initial");
 mock.Mock.Raise.Changed(null, EventArgs.Empty);
 mock.Mock.Verify.Changed.Subscribed().Once();
@@ -82,7 +71,7 @@ mock.Mock.Verify.Changed.Subscribed().Once();
 | Moq construct                                            | Rewritten to                                                                |
 |----------------------------------------------------------|-----------------------------------------------------------------------------|
 | `new Mock<IFoo>()`                                       | `IFoo.CreateMock()`                                                         |
-| `new Mock<IFoo>(MockBehavior.Strict)`                    | `IFoo.CreateMock(MockBehavior.Default.ThrowingWhenNotSetup())`              |
+| `new Mock<IFoo>(MockBehavior.Strict)`                    | `IFoo.CreateMock(Mockolate.MockBehavior.Default.ThrowingWhenNotSetup())`    |
 | `mock.Object`                                            | `mock` (the `.Object` access is dropped)                                    |
 | `mock.Setup(m => m.Method(args))`                        | `mock.Mock.Setup.Method(args)`                                              |
 | `mock.Setup(m => m.Prop)` / `mock.SetupGet(...)`         | `mock.Mock.Setup.Prop`                                                      |
@@ -94,26 +83,23 @@ mock.Mock.Verify.Changed.Subscribed().Once();
 | `.Callback(...)`                                         | `.Do(...)` on the Mockolate setup                                           |
 | `mock.InSequence(seq).Setup(...)` (and other setups)     | `.InSequence(...)` wrapper is stripped; use `Verify…Then(...)` for ordering |
 | `mock.Verify(m => m.Method(args), Times.Once())`         | `mock.Mock.Verify.Method(args).Once()`                                      |
-| `mock.VerifyGet` / `mock.VerifySet`                      | `mock.Mock.Verify.Prop.Got(...)` / `.Set(...)`                              |
-| `mock.Raise(m => m.Event += null, args)`                 | `mock.Mock.Raise.Event(sender, args)`                                       |
+| `mock.VerifyGet(m => m.Prop, times)`                     | `mock.Mock.Verify.Prop.Got().<times>()`                                     |
+| `mock.VerifySet(m => m.Prop = value, times)`             | `mock.Mock.Verify.Prop.Set(value).<times>()`                                |
+| `mock.Raise(m => m.Event += null, eventArgs)`            | `mock.Mock.Raise.Event(null, eventArgs)`                                    |
+| `mock.Raise(m => m.Event += null, args...)` (custom delegate) | `mock.Mock.Raise.Event(args...)`                                       |
 | `mock.VerifyAdd(m => m.Event += ..., times)`             | `mock.Mock.Verify.Event.Subscribed().<times>()`                             |
 | `mock.VerifyRemove(m => m.Event -= ..., times)`          | `mock.Mock.Verify.Event.Unsubscribed().<times>()`                           |
 | Non-literal `Times` argument (e.g. a variable)           | Original Moq call kept, with a `// TODO` comment                            |
 | `It.IsAny<T>()`                                          | preserved as `It.IsAny<T>()`                                                |
 | `It.Is<T>(predicate)`                                    | `It.Satisfies<T>(predicate)`                                                |
 | `It.IsInRange(lo, hi, Range.Inclusive)`                  | `It.IsInRange(lo, hi)` (the `Range` argument is dropped)                    |
-| `It.IsRegex(pattern, options)`                           | `It.Matches(pattern).AsRegex(options)`                                      |
+| `It.IsRegex(pattern)`                                    | `It.Matches(pattern).AsRegex()`                                             |
 | `It.Ref<T>.IsAny` / `out` parameters                     | `It.IsAnyRef<T>()` / `It.IsOut(() => value)`                                |
-| Nested mocks (`mock.Setup(m => m.Child.Prop)`)           | Navigation chain is preserved: `mock.Child.Mock.Setup.Prop`                 |
+| Nested mocks (`mock.Setup(m => m.Child.Prop)`)           | `mock.Child.Mock.Setup.Prop` plus a `// TODO` comment to register `Child`   |
 
 ## Migrating from NSubstitute
 
-The NSubstitute fixer rewrites `Substitute.For<T>(...)` to `T.CreateMock(...)` and reroutes the
-implicit setup/verify calls (`sub.Method(args).Returns(...)`, `sub.Received().Method(...)`) through the
-strongly-typed `Mock.Setup` / `Mock.Verify` chains. `Arg.Any<T>()` becomes `It.IsAny<T>()`,
-`Arg.Is<T>(predicate)` becomes `It.Satisfies<T>(...)`, and `Raise.Event(...)` is rewritten to the
-corresponding `sub.Mock.Raise.<Event>(...)` call. Nested-mock setups (`sub.Child.M(args).Returns(...)`)
-are migrated with a `// TODO` comment because the parent must be wired up to return the child mock manually.
+The NSubstitute code fix rewrites `Substitute.For<T>(...)` to `T.CreateMock(...)` and reroutes the implicit setup/verify calls (`sub.Method(args).Returns(...)`, `sub.Received().Method(...)`) through the strongly-typed `Mock.Setup` / `Mock.Verify` chains. `Arg.Any<T>()` becomes `It.IsAny<T>()`, `Arg.Is<T>(predicate)` becomes `It.Satisfies<T>(...)`, and `Raise.Event(...)` is rewritten to the corresponding `sub.Mock.Raise.<Event>(...)` call. Nested-mock setups (`sub.Child.M(args).Returns(...)`) are migrated with a `// TODO` comment because the parent must be wired up to return the child mock manually.
 
 ```csharp
 // Before (NSubstitute)
