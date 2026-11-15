@@ -1,11 +1,22 @@
 using System.Collections.Immutable;
+using System.Linq;
+using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
 
 namespace Mockolate.Migration.Tests.Verifiers;
 
 internal static class CSharpVerifierHelper
 {
+	/// <summary>
+	///     The Moq and NSubstitute packages in the versions of <c>Directory.Packages.props</c>, which the test project
+	///     writes into its <see cref="AssemblyMetadataAttribute" />s, so that the tests use the same versions as the
+	///     Playground projects.
+	/// </summary>
+	internal static ImmutableArray<PackageIdentity> MockingLibraries { get; } =
+		[GetPackage("Moq"), GetPackage("NSubstitute"),];
+
 	/// <summary>
 	///     By default, the compiler reports diagnostics for nullable reference types at
 	///     <see cref="DiagnosticSeverity.Warning" />, and the analyzer test framework defaults to only validating
@@ -32,4 +43,8 @@ internal static class CSharpVerifierHelper
 
 		return nullableWarnings;
 	}
+
+	private static PackageIdentity GetPackage(string id)
+		=> new(id, typeof(CSharpVerifierHelper).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>()
+			.Single(attribute => attribute.Key == id).Value!);
 }
