@@ -36,7 +36,7 @@ public sealed class ApplyFixTests
 	{
 		int count = Boxes().Count();
 
-		await That(count).IsGreaterThanOrEqualTo(4)
+		await That(count).IsGreaterThanOrEqualTo(13)
 			.Because("the check must not pass because it no longer finds the ApplyFix boxes");
 	}
 
