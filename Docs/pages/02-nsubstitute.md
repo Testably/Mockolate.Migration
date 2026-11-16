@@ -42,7 +42,7 @@ dispenser.Mock.Verify.Dispense("White", It.IsAny<int>()).Never();
 
 ## Supported NSubstitute constructs
 
-The tables list the constructs the code fix rewrites. Everything else [needs manual review](./00-index.md#what-needs-manual-review). The examples use the `IChocolateDispenser` interface from the [migration guide](/Mockolate/migration/) and the `VendingMachine` from [Getting started](../../01-getting-started.mdx); the code fix keeps your variable names, so the mock keeps its name and `sut` stays the system under test.
+The tables list the constructs the code fix rewrites. Everything else [needs manual review](./00-index.md#what-needs-manual-review). The examples use the `IChocolateDispenser` interface from the [migration overview](./00-index.md#side-by-side) and the `VendingMachine` from [Getting started](../01-getting-started.mdx); the code fix keeps your variable names, so the mock keeps its name and `sut` stays the system under test.
 
 ### Creating substitutes
 
@@ -66,7 +66,7 @@ The tables list the constructs the code fix rewrites. Everything else [needs man
 | `sub.When(x => x.Method(args)).Do(callback)`                | `sub.Mock.Setup.Method(args).Do(callback)`                                   |
 | `sub.When(x => x.Method(args)).DoNotCallBase()`             | `sub.Mock.Setup.Method(args).SkippingBaseClass()`                            |
 
-Multiple return values become a [sequence](../../05-setup/01-methods.md#sequences) that ends with `.Forever()`, so the last value repeats as in NSubstitute, and `ReturnsForAnyArgs` ignores the arguments with `AnyParameters()`:
+Multiple return values become a [sequence](../05-setup/01-methods.md#sequences) that ends with `.Forever()`, so the last value repeats as in NSubstitute, and `ReturnsForAnyArgs` ignores the arguments with `AnyParameters()`:
 
 <ApplyFix id="MockolateM002" migrateTo="Mockolate">
 
@@ -151,7 +151,7 @@ dispenser.Mock.Verify.TotalDispensed.Got().AtLeastOnce();
 | `Arg.Is(value)`, `Arg.Is<T>(value)`                         | `It.Is(value)`, `It.Is<T>(value)`                                            |
 | `Arg.Compat.Any<T>()` and the other `Arg.Compat` matchers   | the same as the matching `Arg` matcher                                       |
 
-See [parameter matching](../../06-parameter-matching.md) for the Mockolate matchers.
+See [parameter matching](../06-parameter-matching.md) for the Mockolate matchers.
 
 ### CallInfo callbacks
 
@@ -223,4 +223,4 @@ NSubstitute creates the substitute for `Child` automatically, Mockolate does not
 
 The migrated code compiles, but behaves differently from NSubstitute in this case:
 
-- **Class substitutes call the base class.** The code fix creates both `Substitute.For<T>()` and `Substitute.ForPartsOf<T>()` as `T.CreateMock()`, and a Mockolate class mock calls the base class implementation of virtual members by default, even when a setup matches. To keep the behavior of `Substitute.For<T>()` for a class, pass `MockBehavior.Default.SkippingBaseClass()` to `CreateMock` (see [customizing mock behavior](../../04-create-mocks.md#customizing-mock-behavior)).
+- **Class substitutes call the base class.** The code fix creates both `Substitute.For<T>()` and `Substitute.ForPartsOf<T>()` as `T.CreateMock()`, and a Mockolate class mock calls the base class implementation of virtual members by default, even when a setup matches. To keep the behavior of `Substitute.For<T>()` for a class, pass `MockBehavior.Default.SkippingBaseClass()` to `CreateMock` (see [customizing mock behavior](../04-create-mocks.md#customizing-mock-behavior)).

@@ -7,7 +7,7 @@
 
 A Roslyn analyzer and code fix that migrate [Moq](https://github.com/devlooped/moq) and [NSubstitute](https://nsubstitute.github.io) usage to [Mockolate](https://github.com/Testably/Mockolate). Drop the package into a project that uses one of those libraries and the analyzer flags each mock it can migrate; the code fix rewrites the setup, verification, and event APIs to their Mockolate equivalents.
 
-The documentation is at **[docs.testably.org/Mockolate/migration/automated](https://docs.testably.org/Mockolate/migration/automated/)**.
+The documentation is at **[docs.testably.org/Mockolate/migration](https://docs.testably.org/Mockolate/migration/)**.
 
 ## Installation
 
@@ -34,7 +34,7 @@ After installing the package, every mock the code fix can migrate is reported as
 1. Install Mockolate and the migration package.
 2. Apply the code fix in your IDE (Visual Studio, Rider, VS Code with C# Dev Kit), with *Fix all occurrences* for many mocks at once, or from the command line with `dotnet format analyzers --diagnostics MockolateM001 MockolateM002`.
 3. Remove `using Moq;` or `using NSubstitute;` from the migrated files once nothing else in them uses the source library. The code fix keeps the directive, and with Moq, `It` is ambiguous until you remove it.
-4. Build, run your tests and check [what needs manual review](https://docs.testably.org/Mockolate/migration/automated/#what-needs-manual-review): the code fix leaves a `// TODO(MockolateM001)` or `// TODO(MockolateM002)` comment where it cannot finish the migration on its own. The pages for [Moq](https://docs.testably.org/Mockolate/migration/automated/moq#behavioral-differences) and [NSubstitute](https://docs.testably.org/Mockolate/migration/automated/nsubstitute#behavioral-differences) also list where the migrated code behaves differently.
+4. Build, run your tests and check [what needs manual review](https://docs.testably.org/Mockolate/migration/#what-needs-manual-review): the code fix leaves a `// TODO(MockolateM001)` or `// TODO(MockolateM002)` comment where it cannot finish the migration on its own. The pages for [Moq](https://docs.testably.org/Mockolate/migration/moq#behavioral-differences) and [NSubstitute](https://docs.testably.org/Mockolate/migration/nsubstitute#behavioral-differences) also list where the migrated code behaves differently.
 5. Remove Moq or NSubstitute and the migration package. Mockolate stays in the project.
 
 To keep a mock as it is, suppress the warning with `#pragma warning disable MockolateM001` (or `MockolateM002`) or with `dotnet_diagnostic.MockolateM001.severity = none` in `.editorconfig`.
