@@ -42,7 +42,7 @@ dispenser.Mock.Verify.Dispense("White", It.IsAny<int>()).Never();
 
 ## Supported Moq constructs
 
-The tables list the constructs the code fix rewrites. Everything else [needs manual review](./00-index.md#what-needs-manual-review). The examples use the `IChocolateDispenser` interface from the [migration overview](./00-index.md#side-by-side) and the `VendingMachine` from [Getting started](../01-getting-started.mdx); the code fix keeps your variable names, so the mock keeps its name and `sut` stays the system under test.
+The tables list the constructs the code fix rewrites. Everything else [needs manual review](./00-index.md#what-needs-manual-review). The examples use the `IChocolateDispenser` interface from the [migration overview](./00-index.md#side-by-side) and the `VendingMachine` from [Getting started](/Mockolate/getting-started); the code fix keeps your variable names, so the mock keeps its name and `sut` stays the system under test.
 
 ### Creating mocks
 
@@ -71,7 +71,7 @@ IChocolateDispenser dispenserObject = dispenser;
 
 </ApplyFix>
 
-Strict mocks get a [behavior](../04-create-mocks.md#customizing-mock-behavior) that throws when no setup matches, written as `Mockolate.MockBehavior` because Moq has a `MockBehavior` as well:
+Strict mocks get a [behavior](/Mockolate/create-mocks#customizing-mock-behavior) that throws when no setup matches, written as `Mockolate.MockBehavior` because Moq has a `MockBehavior` as well:
 
 <ApplyFix id="MockolateM001" migrateTo="Mockolate">
 
@@ -101,7 +101,7 @@ dispenser.Mock.Setup.Dispense("Dark", 1).Returns(true);
 | `.Callback(…)`                                            | `.Do(…)`                                                               |
 | `mock.InSequence(sequence).Setup(…)`                      | `mock.Mock.Setup.Method(…)` (the `InSequence` wrapper is removed)      |
 
-`Callback` becomes `Do`, and a `SetupSequence` becomes a setup with the same chain of `Returns`, which Mockolate uses as a [sequence](../05-setup/01-methods.md#sequences). A Mockolate sequence starts over after its last step, while Moq returns the default value, so the code fix ends the chain with `.Returns(default(T)).Forever()`:
+`Callback` becomes `Do`, and a `SetupSequence` becomes a setup with the same chain of `Returns`, which Mockolate uses as a [sequence](/Mockolate/setup/methods#sequences). A Mockolate sequence starts over after its last step, while Moq returns the default value, so the code fix ends the chain with `.Returns(default(T)).Forever()`:
 
 <ApplyFix id="MockolateM001" migrateTo="Mockolate">
 
@@ -188,7 +188,7 @@ dispenser.Mock.Verify.TotalDispensed.Set(10).Never();
 | `It.IsRegex(pattern, options)`                            | `It.Matches(pattern).AsRegex(options).CaseSensitive()`                 |
 | `It.Ref<T>.IsAny`, `out` parameters                       | `It.IsAnyRef<T>()`, `It.IsOut(() => value)`                            |
 
-`It.IsAny` stays as it is, while `It.Is` with a predicate becomes `It.Satisfies` and `It.IsRegex` becomes `It.Matches(…).AsRegex(…)`. `It.Matches` ignores the case by default, so the code fix appends `CaseSensitive()` to match the case like Moq does; a `RegexOptions.IgnoreCase` option still applies. See [parameter matching](../06-parameter-matching.md) for the Mockolate matchers.
+`It.IsAny` stays as it is, while `It.Is` with a predicate becomes `It.Satisfies` and `It.IsRegex` becomes `It.Matches(…).AsRegex(…)`. `It.Matches` ignores the case by default, so the code fix appends `CaseSensitive()` to match the case like Moq does; a `RegexOptions.IgnoreCase` option still applies. See [parameter matching](/Mockolate/parameter-matching) for the Mockolate matchers.
 
 <ApplyFix id="MockolateM001" migrateTo="Mockolate">
 
@@ -247,6 +247,6 @@ Moq creates the mock for `Child` automatically, Mockolate does not; set up the p
 
 The migrated code compiles, but behaves differently from Moq in these cases:
 
-- **Class mocks call the base class.** A Moq mock calls the base class implementation only with `CallBase = true`, while a Mockolate class mock calls it for virtual members by default, even when a setup matches. To keep the Moq behavior, pass `Mockolate.MockBehavior.Default.SkippingBaseClass()` to `CreateMock` (see [customizing mock behavior](../04-create-mocks.md#customizing-mock-behavior)).
-- **Setups no longer check the call order.** The code fix removes the `InSequence(…)` wrapper. Mockolate checks the order after the calls instead: add a [`Then(…)`](../07-verify-interactions.md#call-order) chain to the verification.
+- **Class mocks call the base class.** A Moq mock calls the base class implementation only with `CallBase = true`, while a Mockolate class mock calls it for virtual members by default, even when a setup matches. To keep the Moq behavior, pass `Mockolate.MockBehavior.Default.SkippingBaseClass()` to `CreateMock` (see [customizing mock behavior](/Mockolate/create-mocks#customizing-mock-behavior)).
+- **Setups no longer check the call order.** The code fix removes the `InSequence(…)` wrapper. Mockolate checks the order after the calls instead: add a [`Then(…)`](/Mockolate/verify-interactions#call-order) chain to the verification.
 - **Failure messages are dropped.** `mock.Verify(m => m.Method(args), "message")` becomes `mock.Mock.Verify.Method(args).AtLeastOnce()` without the message.
