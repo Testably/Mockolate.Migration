@@ -19,7 +19,7 @@ Coming from **[Moq](https://github.com/devlooped/moq)**, **[NSubstitute](https:/
 
 ### Installation
 
-The migration package contains only the analyzer and the code fixes, no runtime code, and does not reference Mockolate. Add [Mockolate](../01-getting-started.mdx) to the test project you want to migrate yourself, so that the migrated code still compiles after you remove the migration package:
+The migration package contains only the analyzer and the code fixes, no runtime code, and does not reference Mockolate. Add [Mockolate](/Mockolate/getting-started) to the test project you want to migrate yourself, so that the migrated code still compiles after you remove the migration package:
 
 <PackageInstall package="Mockolate" />
 
@@ -63,7 +63,7 @@ dotnet format analyzers --diagnostics MockolateM001 MockolateM002
 The code fix leaves a `// TODO(MockolateM001)` or `// TODO(MockolateM002)` comment where it cannot finish the migration on its own. Search for them after you apply the code fix:
 
 - **Nested mocks**: Moq and NSubstitute create mocks for nested members (`m => m.Child.Prop`) automatically. Mockolate does not, so set up the parent to return a mock for `Child` yourself.
-- **Moq sequences whose steps are not chained to `SetupSequence(…)`**, for example when the setup is stored in a variable. After the last step, Moq returns the default value (or does nothing for a `void` method), while a Mockolate [sequence](../05-setup/01-methods.md#sequences) starts over. End the sequence as the comment describes.
+- **Moq sequences whose steps are not chained to `SetupSequence(…)`**, for example when the setup is stored in a variable. After the last step, Moq returns the default value (or does nothing for a `void` method), while a Mockolate [sequence](/Mockolate/setup/methods#sequences) starts over. End the sequence as the comment describes.
 - **[CallInfo callbacks](./02-nsubstitute.md#callinfo-callbacks)** that cannot be rewritten safely, for example when they use `call` directly, compute the index at runtime, assign `out` or `ref` arguments, call an ambiguous `call.Arg<T>()`, or declare local variables with the same names as the parameters of the method.
 - **Moq `Times` arguments that the code fix cannot translate**, for example a variable or a conditional expression. The Moq verification stays as it is.
 
@@ -275,7 +275,7 @@ dispenser.Mock.Verify["Dark"].Got().Once();
 
 :::warning[Differences to watch out for]
 
-- A `Returns`/`Throws` [sequence](../05-setup/01-methods.md#sequences) starts over after its last entry. Mark the last
+- A `Returns`/`Throws` [sequence](/Mockolate/setup/methods#sequences) starts over after its last entry. Mark the last
   entry with `.Forever()` to keep repeating it instead.
 - Class mocks call the base class implementation by default, even when a setup matches. See
   [Core concepts](/Mockolate/core-concepts/#what-happens-when-the-mock-is-called).
@@ -283,4 +283,4 @@ dispenser.Mock.Verify["Dark"].Got().Once();
 
 :::
 
-For the complete Mockolate syntax on one page, see the [cheat sheet](../02-core-concepts/02-cheat-sheet.md).
+For the complete Mockolate syntax on one page, see the [cheat sheet](/Mockolate/core-concepts/cheat-sheet).
